@@ -1,15 +1,11 @@
 const crypto = require("crypto");
 const { stringify } = require("querystring");
+const { parse } = require("cookie");
 
 const checkAuth = (headers, message) => {
   if (headers["Cookie"]) {
-    const sign = ("; " + headers["Cookie"])
-      .split("; sign=")
-      .pop()
-      .split(";")
-      .shift();
-    console.log(sign);
-    console.log(message);
+    const { sign } = parse(headers["Cookie"]);
+
     return verify(message, process.env.PUBLIC_KEY, sign);
   }
 
