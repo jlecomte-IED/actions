@@ -43,7 +43,7 @@ action "Prepare deploy Notification" {
 # after check !
 workflow "Production deploy" {
   on = "deployment_status"
-  resolves = ["Deploy Notification"]
+  resolves = ["Update deployment"]
 }
 
 action "Filter in progress deployment" {
@@ -63,10 +63,4 @@ action "Update deployment" {
   needs = ["Deploy to prod"]
   args = "update_deployment success"
   secrets = ["GITHUB_TOKEN"]
-}
-
-action "Deploy Notification" {
-  needs = "Update deployment"
-  uses = "apex/actions/slack@master"
-  secrets = ["SLACK_WEBHOOK_URL"]
 }
