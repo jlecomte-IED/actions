@@ -4,7 +4,7 @@ const octokit = require('@octokit/rest')()
 const { sign } = require('../../utils')
 const { getToken } = require('./auth')
 
-module.exports = async ({ queryStringParameters }, context, callback) => {
+module.exports = async ({ queryStringParameters }) => {
   const { state, code } = queryStringParameters
 
   const token = await getToken({ code, state })
@@ -40,7 +40,7 @@ module.exports = async ({ queryStringParameters }, context, callback) => {
     if (status === 200) {
       const normalizedState = JSON.parse(decodeURIComponent(state))
       // create cookie & redirect to confirm
-      callback(null, {
+      return {
         statusCode: 302,
         body: JSON.stringify({
           id,
@@ -60,15 +60,14 @@ module.exports = async ({ queryStringParameters }, context, callback) => {
           ),
           Location: `/deploy?${query(normalizedState)}`,
         },
-      })
-      return
+      }
     }
   } catch (error) {
-    callback(error)
+    console.error(error)
   }
 
-  callback(null, {
+  return {
     statusCode: 403,
     body: 'pas bien !',
-  })
+  }
 }

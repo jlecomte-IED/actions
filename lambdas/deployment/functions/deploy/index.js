@@ -4,14 +4,13 @@ const { checkAuth, redirectToAuth } = require('../../utils')
 
 const template = readFileSync('./functions/deploy/confirm.html', 'utf8')
 
-module.exports = (
-  { queryStringParameters, requestContext: { domainName, path }, headers },
-  context,
-  callback,
-) => {
+module.exports = ({
+  queryStringParameters,
+  requestContext: { domainName, path },
+  headers,
+}) => {
   if (!checkAuth(headers, queryStringParameters.sign)) {
-    callback(null, redirectToAuth(queryStringParameters))
-    return
+    return redirectToAuth(queryStringParameters)
   }
 
   const url = `https://${domainName}${path.replace(
@@ -19,7 +18,7 @@ module.exports = (
     'confirm',
   )}?${stringify(queryStringParameters)}`
 
-  callback(null, {
+  return {
     statusCode: 200,
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
@@ -38,5 +37,5 @@ module.exports = (
           queryStringParameters.tag
         }`,
       ),
-  })
+  }
 }

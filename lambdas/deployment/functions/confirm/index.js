@@ -4,18 +4,13 @@ const { checkAuth, redirectToAuth, verify } = require('../../utils')
 
 const template = readFileSync('./functions/confirm/ok.html', 'utf8')
 
-module.exports = async (
-  { queryStringParameters, headers },
-  context,
-  callback,
-) => {
+module.exports = async ({ queryStringParameters, headers }) => {
   if (queryStringParameters) {
     const {
       owner, repo, deploy, tag, sign,
     } = queryStringParameters
     if (!checkAuth(headers, sign)) {
-      callback(null, redirectToAuth(queryStringParameters))
-      return
+      return redirectToAuth(queryStringParameters)
     }
 
     if (owner && repo && deploy && sign && tag) {
@@ -35,7 +30,7 @@ module.exports = async (
           },
         })
 
-        callback(null, {
+        return {
           statusCode: 200,
           headers: {
             'Content-Type': 'text/html; charset=utf-8',
@@ -44,14 +39,13 @@ module.exports = async (
             '__LINK__',
             `https://github.com/${owner}/${repo}/deployments`,
           ),
-        })
-        return
+        }
       }
     }
   }
 
-  callback(null, {
+  return {
     statusCode: 400,
     body: 'Missing params',
-  })
+  }
 }
