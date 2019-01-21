@@ -1,15 +1,8 @@
 const crypto = require("crypto");
+const { stringify } = require("querystring");
 
 const { owner, repo, ref, refName, context } = require("./tools");
 const api = require("./api");
-
-const encodeData = data => {
-  return Object.keys(data)
-    .map(function(key) {
-      return [key, data[key]].map(encodeURIComponent).join("=");
-    })
-    .join("&");
-};
 
 module.exports = async () => {
   const deploy = await api.createDeploymentFromRef({
@@ -27,7 +20,7 @@ module.exports = async () => {
   const sign = crypto.createSign("RSA-SHA256");
   sign.update(owner + repo + deploy.id + refName);
 
-  const url = `https://auto-deploy.inextenso.io/deploy?${encodeData({
+  const url = `https://auto-deploy.inextenso.io/deploy?${stringify({
     owner,
     repo,
     deploy: deploy.id,

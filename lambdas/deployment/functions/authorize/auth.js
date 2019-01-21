@@ -1,6 +1,5 @@
 const fetch = require("node-fetch");
 const octokit = require("@octokit/rest")();
-const { encodeData } = require("../../utils");
 
 const getToken = async ({ code, state }) => {
   const response = await fetch("https://github.com/login/oauth/access_token", {

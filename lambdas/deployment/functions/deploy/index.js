@@ -1,5 +1,6 @@
 const { readFileSync } = require("fs");
-const { encodeData, checkAuth, redirectToAuth } = require("../../utils");
+const { stringify } = require("querystring");
+const { checkAuth, redirectToAuth } = require("../../utils");
 const template = readFileSync("./functions/deploy/confirm.html", "utf8");
 
 module.exports = (
@@ -15,7 +16,7 @@ module.exports = (
   const url = `https://${domainName}${path.replace(
     "deploy",
     "confirm"
-  )}?${encodeData(queryStringParameters)}`;
+  )}?${stringify(queryStringParameters)}`;
 
   callback(null, {
     statusCode: 200,

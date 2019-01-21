@@ -1,6 +1,7 @@
+const { stringify } = require("querystring");
 const fetch = require("node-fetch");
 const octokit = require("@octokit/rest")();
-const { encodeData, sign } = require("../../utils");
+const { sign } = require("../../utils");
 const { getToken } = require("./auth");
 
 module.exports = async (
@@ -55,8 +56,8 @@ module.exports = async (
           "Set-Cookie": `sign=${sign(
             normalizedState.sign,
             process.env.PRIVATE_KEY
-          )}; MaxAge=60; Secure; HttpOnly`,
-          Location: `/deploy?${encodeData(normalizedState)}`
+          )}; Max-Age=60; Secure; HttpOnly`,
+          Location: `/deploy?${stringify(normalizedState)}`
         }
       });
       return;
