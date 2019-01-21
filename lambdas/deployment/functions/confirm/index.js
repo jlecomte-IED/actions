@@ -1,16 +1,22 @@
-const crypto = require("crypto");
 const octokit = require("@octokit/rest")();
 const { readFileSync } = require("fs");
+const { checkAuth, redirectToAuth, verify } = require("../../utils");
 const template = readFileSync("./functions/confirm/ok.html", "utf8");
 
-module.exports = async ({ queryStringParameters }, context, callback) => {
+module.exports = async (
+  { queryStringParameters, headers },
+  context,
+  callback
+) => {
   if (queryStringParameters) {
     const { owner, repo, deploy, tag, sign } = queryStringParameters;
-    if (owner && repo && deploy && sign && tag) {
-      const verify = crypto.createVerify("SHA256");
-      verify.update(owner + repo + deploy + tag);
+    if (!checkAuth(headers, sign)) {
+      callback(null, redirectToAuth(queryStringParameters));
+      return;
+    }
 
-      if (verify.verify(process.env.PUBLIC_KEY, sign, "hex")) {
+    if (owner && repo && deploy && sign && tag) {
+      if (verify(owner + repo + deploy + tag, process.env.PUBLIC_KEY, sign)) {
         octokit.authenticate({
           type: "token",
           token: process.env.GITHUB_TOKEN

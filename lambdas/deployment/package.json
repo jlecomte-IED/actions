@@ -9,6 +9,7 @@
     "deploy": "sls create_domain --stage prod && sls deploy --stage prod"
   },
   "dependencies": {
-    "@octokit/rest": "^16.10.0"
+    "@octokit/rest": "^16.10.0",
+    "node-fetch": "^2.3.0"
   }
 }

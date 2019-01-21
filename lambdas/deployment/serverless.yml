@@ -14,15 +14,31 @@ functions:
     environment:
       GITHUB_TOKEN: ${ssm:githubToken}
       PUBLIC_KEY: ${ssm:deployPublicKey}
+      GITHUB_CLIENT_ID: ${ssm:deployerGithubClientID}
     events:
       - http:
           path: /confirm
           method: GET
   deploy:
     handler: handler.deploy
+    environment:
+      GITHUB_CLIENT_ID: ${ssm:deployerGithubClientID}
+      PUBLIC_KEY: ${ssm:deployPublicKey}
     events:
       - http:
           path: /deploy
+          method: GET
+  authorize:
+    handler: handler.authorize
+    environment:
+      GITHUB_CLIENT_ID: ${ssm:deployerGithubClientID}
+      GITHUB_CLIENT_SECRET: ${ssm:deployerGithubClientSecret}
+      AUTHORIZED_TEAM: publisher
+      PUBLIC_KEY: ${ssm:deployPublicKey}
+      PRIVATE_KEY: ${ssm:deployPrivateKey}
+    events:
+      - http:
+          path: /authorize
           method: GET
 
 custom:

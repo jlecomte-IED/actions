@@ -1,30 +1,21 @@
 const { readFileSync } = require("fs");
+const { encodeData, checkAuth, redirectToAuth } = require("../../utils");
 const template = readFileSync("./functions/deploy/confirm.html", "utf8");
-const encodeData = data => {
-  return Object.keys(data)
-    .map(function(key) {
-      return [key, data[key]].map(encodeURIComponent).join("=");
-    })
-    .join("&");
-};
 
 module.exports = (
-  { queryStringParameters, requestContext: { domainName, path } },
+  { queryStringParameters, requestContext: { domainName, path }, headers },
   context,
   callback
 ) => {
-  console.log(
-    JSON.stringify(queryStringParameters),
-    { domainName, path },
-    context,
-    callback
-  );
+  if (!checkAuth(headers, queryStringParameters.sign)) {
+    callback(null, redirectToAuth(queryStringParameters));
+    return;
+  }
+
   const url = `https://${domainName}${path.replace(
     "deploy",
     "confirm"
   )}?${encodeData(queryStringParameters)}`;
-
-  console.log(url);
 
   callback(null, {
     statusCode: 200,
@@ -41,8 +32,9 @@ module.exports = (
       )
       .replace(
         "__APP__",
-        `${queryStringParameters.owner}/${queryStringParameters.repo}`
+        `${queryStringParameters.owner}/${queryStringParameters.repo}:${
+          queryStringParameters.tag
+        }`
       )
   });
-  return;
 };
