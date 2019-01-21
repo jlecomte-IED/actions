@@ -40,4 +40,20 @@ module.exports = async () => {
 
 [![Deploy to prod](https://img.shields.io/badge/Deploy%20to-Production-orange.svg?style=for-the-badge)](${url})`
   );
+
+  context.slackMessage({
+    text: `[${owner}/${repo}:${refName}] Your release are ready to deploy !`,
+    attachments: [
+      {
+        actions: [
+          {
+            type: "button",
+            text: "Release 🚀",
+            url: `https://github.com/${owner}/${repo}/releases/tag/${refName}`,
+            style: "danger"
+          }
+        ]
+      }
+    ]
+  });
 };
