@@ -1,17 +1,19 @@
-const { owner, repo, ref, context } = require("./tools");
+const {
+  owner, repo, ref, context,
+} = require('./tools')
 
-const kit = context.octokit();
+const kit = context.octokit()
 
 const api = {
-  createDeploymentFromRef: async add => {
+  createDeploymentFromRef: async (add) => {
     const { data: deployment } = await kit.repos.createDeployment({
       owner,
       repo,
       ref,
-      ...add
-    });
+      ...add,
+    })
 
-    return deployment;
+    return deployment
   },
   createDeploymentStatus: async (deploy, state) => {
     const { data: stats } = await kit.repos.createDeploymentStatus({
@@ -20,35 +22,35 @@ const api = {
       deployment_id: deploy,
       state,
       headers: {
-        accept: "application/vnd.github.flash-preview+json"
-      }
-    });
+        accept: 'application/vnd.github.flash-preview+json',
+      },
+    })
 
-    return stats;
+    return stats
   },
-  getReleaseByTag: async tag => {
+  getReleaseByTag: async (tag) => {
     const { data: release } = await kit.repos.getReleaseByTag({
       owner,
       repo,
-      tag
-    });
+      tag,
+    })
 
-    return release;
+    return release
   },
-  appendToReleaseBody: async (tag, contents, mark = "DEPLOY") => {
-    const release = await api.getReleaseByTag(tag);
+  appendToReleaseBody: async (tag, contents, mark = 'DEPLOY') => {
+    const release = await api.getReleaseByTag(tag)
 
-    const result = await kit.repos.updateRelease({
+    await kit.repos.updateRelease({
       owner,
       repo,
       release_id: release.id,
       body: `${release.body}<!-- ${mark}_BEGIN -->
 ${contents}
-<!-- ${mark}_END -->`
-    });
+<!-- ${mark}_END -->`,
+    })
 
-    return true;
-  }
-};
+    return true
+  },
+}
 
-module.exports = api;
+module.exports = api
