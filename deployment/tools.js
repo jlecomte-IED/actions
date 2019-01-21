@@ -1,17 +1,17 @@
-const octokit = require("@octokit/rest");
-const fs = require("fs");
-const { promisify } = require("util");
+const octokit = require('@octokit/rest')
+const fs = require('fs')
+const { promisify } = require('util')
 
-const writeFile = promisify(fs.writeFile);
-const readFile = promisify(fs.readFile);
+const writeFile = promisify(fs.writeFile)
+const readFile = promisify(fs.readFile)
 
-const owner = process.env.GITHUB_REPOSITORY.split("/", 1)[0];
-const repo = process.env.GITHUB_REPOSITORY.substring(owner.length + 1);
-const ref = process.env.GITHUB_REF;
-const refName = process.env.GITHUB_REF.split("/")[2];
-const token = process.env.GITHUB_TOKEN;
-const eventPath = process.env.GITHUB_EVENT_PATH;
-const home = process.env.HOME;
+const owner = process.env.GITHUB_REPOSITORY.split('/', 1)[0]
+const repo = process.env.GITHUB_REPOSITORY.substring(owner.length + 1)
+const ref = process.env.GITHUB_REF
+const refName = process.env.GITHUB_REF.split('/')[2]
+const token = process.env.GITHUB_TOKEN
+const eventPath = process.env.GITHUB_EVENT_PATH
+const home = process.env.HOME
 
 module.exports = {
   owner,
@@ -23,22 +23,20 @@ module.exports = {
     repo: add => ({
       repo,
       owner,
-      ...add
+      ...add,
     }),
-    octokit: config => {
-      const client = octokit({ ...config });
+    octokit: (config) => {
+      const client = octokit({ ...config })
       client.authenticate({
-        type: "token",
-        token
-      });
+        type: 'token',
+        token,
+      })
 
-      return client;
+      return client
     },
-    writeJSON: (name, obj) =>
-      writeFile(`${home}/${name}.json`, JSON.stringify(obj)),
-    readJSON: async name =>
-      JSON.parse(await readFile(`${home}/${name}.json`, "utf8")),
-    readEvent: async () => JSON.parse(await readFile(eventPath, "utf8")),
-    slackMessage: obj => writeFile(`./slack.json`, JSON.stringify(obj))
-  }
-};
+    writeJSON: (name, obj) => writeFile(`${home}/${name}.json`, JSON.stringify(obj)),
+    readJSON: async name => JSON.parse(await readFile(`${home}/${name}.json`, 'utf8')),
+    readEvent: async () => JSON.parse(await readFile(eventPath, 'utf8')),
+    slackMessage: obj => writeFile('./slack.json', JSON.stringify(obj)),
+  },
+}

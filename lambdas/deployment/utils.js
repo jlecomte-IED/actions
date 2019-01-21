@@ -1,22 +1,11 @@
 const crypto = require("crypto");
-
-const encodeData = data => {
-  return Object.keys(data)
-    .map(function(key) {
-      return [key, data[key]].map(encodeURIComponent).join("=");
-    })
-    .join("&");
-};
+const { stringify } = require("querystring");
+const { parse } = require("cookie");
 
 const checkAuth = (headers, message) => {
   if (headers["Cookie"]) {
-    const sign = ("; " + headers["Cookie"])
-      .split("; sign=")
-      .pop()
-      .split(";")
-      .shift();
-    console.log(sign);
-    console.log(message);
+    const { sign } = parse(headers["Cookie"]);
+
     return verify(message, process.env.PUBLIC_KEY, sign);
   }
 
@@ -27,7 +16,7 @@ const redirectToAuth = queries => {
   return {
     statusCode: 302,
     headers: {
-      Location: `https://github.com/login/oauth/authorize?${encodeData({
+      Location: `https://github.com/login/oauth/authorize?${stringify({
         client_id: process.env.GITHUB_CLIENT_ID,
         redirect_uri: "https://auto-deploy.inextenso.io/authorize",
         state: encodeURIComponent(JSON.stringify(queries)),
@@ -51,7 +40,6 @@ const sign = (message, key) => {
 };
 
 module.exports = {
-  encodeData,
   checkAuth,
   redirectToAuth,
   verify,

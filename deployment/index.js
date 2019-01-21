@@ -1,7 +1,8 @@
-const func = require(`./${process.argv[2]}`);
+/* eslint-disable global-require, import/no-dynamic-require */
+const func = require(`./${process.argv[2]}`)
 try {
-  func();
+  func()
 } catch (e) {
-  console.error(e);
-  process.exit(1);
+  console.error(e)
+  process.exit(1)
 }
