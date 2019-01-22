@@ -1,5 +1,5 @@
 const { stringify: query } = require('querystring')
-const { stringify: cookie } = require('cookie')
+const { serialize: cookie } = require('cookie')
 const octokit = require('@octokit/rest')()
 const { sign } = require('../../utils')
 const { getToken } = require('./auth')
