@@ -3,8 +3,8 @@
 Inextenso Digital collection of useful utilities for interacting with GitHub Actions.
 
 ## Implement it in your project
- - Import .github/prod-deploy.workflow in your root project
- - Import .github/branch.workflow in your root project
+ - Import .github/prod-deploy.workflow in your `.github/main.workflow`
+ - Import .github/branch.workflow in your `.github/main.workflow`
  - Update your makefile with thoses cmd:
 
 ```
