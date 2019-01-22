@@ -42,7 +42,7 @@ module.exports = async () => {
   )
 
   context.slackMessage({
-    text: `[${owner}/${repo}:${refName}] Your release are ready to deploy !`,
+    text: `[${owner}/${repo}:${refName}] Your release is ready to deploy!`,
     attachments: [
       {
         actions: [
