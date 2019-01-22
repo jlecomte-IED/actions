@@ -38,6 +38,9 @@ action "Prepare deploy Notification" {
   needs = "Create deployment & update release"
   uses = "apex/actions/slack@master"
   secrets = ["SLACK_WEBHOOK_URL"]
+  env = {
+    SLACK_CHANNEL = "#publishers"
+  }
 }
 
 # after check !
