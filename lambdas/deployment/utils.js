@@ -16,9 +16,18 @@ const sign = (message, key) => {
 
 const checkAuth = (headers, message) => {
   if (headers && headers.Cookie) {
-    const { sign: cookieSign } = parse(headers.Cookie)
+    try {
+      const { sign: cookieSign } = parse(headers.Cookie)
 
-    return verify(message, process.env.PUBLIC_KEY, cookieSign)
+      if (!cookieSign) {
+        return false
+      }
+
+      return verify(message, process.env.PUBLIC_KEY, cookieSign)
+    } catch (e) {
+      console.error('unable to parse cookie & verify', parse(headers.Cookie), e)
+      return false
+    }
   }
 
   return false

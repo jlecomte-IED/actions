@@ -1,10 +1,14 @@
 {
   "env": {
-    "jest": true
+    "jest": true,
+    "node": true
   },
   "extends": "airbnb-base",
   "rules": {
-    "semi": 0,
-    "max-len": ["error", 80]
+    "semi": [1, "never"],
+    "max-len": ["error", { "code": 80 }],
+    "implicit-arrow-linebreak": 0,
+    "no-console": 0,
+    "camelcase": 0
   }
 }

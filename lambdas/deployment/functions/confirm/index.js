@@ -1,4 +1,4 @@
-const octokit = require('@octokit/rest')()
+const Octokit = require('@octokit/rest')
 const { readFileSync } = require('fs')
 const { checkAuth, redirectToAuth, verify } = require('../../utils')
 
@@ -15,30 +15,33 @@ module.exports = async ({ queryStringParameters, headers }) => {
 
     if (owner && repo && deploy && sign && tag) {
       if (verify(owner + repo + deploy + tag, process.env.PUBLIC_KEY, sign)) {
-        octokit.authenticate({
-          type: 'token',
-          token: process.env.GITHUB_TOKEN,
+        const client = new Octokit({
+          auth: `token ${process.env.GITHUB_TOKEN}`,
         })
 
-        await octokit.repos.createDeploymentStatus({
-          owner,
-          repo,
-          deployment_id: deploy,
-          state: 'in_progress',
-          headers: {
-            accept: 'application/vnd.github.flash-preview+json',
-          },
-        })
+        try {
+          await client.repos.createDeploymentStatus({
+            owner,
+            repo,
+            deployment_id: deploy,
+            state: 'in_progress',
+            headers: {
+              accept: 'application/vnd.github.flash-preview+json',
+            },
+          })
 
-        return {
-          statusCode: 200,
-          headers: {
-            'Content-Type': 'text/html; charset=utf-8',
-          },
-          body: template.replace(
-            '__LINK__',
-            `https://github.com/${owner}/${repo}/deployments`,
-          ),
+          return {
+            statusCode: 200,
+            headers: {
+              'Content-Type': 'text/html; charset=utf-8',
+            },
+            body: template.replace(
+              '__LINK__',
+              `https://github.com/${owner}/${repo}/deployments`,
+            ),
+          }
+        } catch (e) {
+          console.error(e)
         }
       }
     }
