@@ -1,4 +1,4 @@
-const octokit = require('@octokit/rest')()
+const Octokit = require('@octokit/rest')
 const { readFileSync } = require('fs')
 const { checkAuth, redirectToAuth, verify } = require('../../utils')
 
@@ -15,12 +15,11 @@ module.exports = async ({ queryStringParameters, headers }) => {
 
     if (owner && repo && deploy && sign && tag) {
       if (verify(owner + repo + deploy + tag, process.env.PUBLIC_KEY, sign)) {
-        octokit.authenticate({
-          type: 'token',
-          token: process.env.GITHUB_TOKEN,
+        const client = new Octokit({
+          auth: `token ${process.env.GITHUB_TOKEN}`,
         })
 
-        await octokit.repos.createDeploymentStatus({
+        await client.repos.createDeploymentStatus({
           owner,
           repo,
           deployment_id: deploy,

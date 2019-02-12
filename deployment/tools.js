@@ -1,4 +1,4 @@
-const octokit = require('@octokit/rest')
+const Octokit = require('@octokit/rest')
 const fs = require('fs')
 const { promisify } = require('util')
 
@@ -25,17 +25,11 @@ module.exports = {
       owner,
       ...add,
     }),
-    octokit: (config) => {
-      const client = octokit({ ...config })
-      client.authenticate({
-        type: 'token',
-        token,
-      })
-
-      return client
-    },
-    writeJSON: (name, obj) => writeFile(`${home}/${name}.json`, JSON.stringify(obj)),
-    readJSON: async name => JSON.parse(await readFile(`${home}/${name}.json`, 'utf8')),
+    octokit: config => new Octokit({ ...config, auth: `token ${token}` }),
+    writeJSON: (name, obj) =>
+      writeFile(`${home}/${name}.json`, JSON.stringify(obj)),
+    readJSON: async name =>
+      JSON.parse(await readFile(`${home}/${name}.json`, 'utf8')),
     readEvent: async () => JSON.parse(await readFile(eventPath, 'utf8')),
     slackMessage: obj => writeFile('./slack.json', JSON.stringify(obj)),
   },

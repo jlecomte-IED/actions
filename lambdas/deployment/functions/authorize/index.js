@@ -1,6 +1,6 @@
 const { stringify: query } = require('querystring')
 const { serialize: cookie } = require('cookie')
-const octokit = require('@octokit/rest')()
+const Octokit = require('@octokit/rest')
 const { sign } = require('../../utils')
 const { getToken } = require('./auth')
 
@@ -8,20 +8,16 @@ module.exports = async ({ queryStringParameters }) => {
   const { state, code } = queryStringParameters
 
   const token = await getToken({ code, state })
-
-  octokit.authenticate({
-    type: 'token',
-    token,
-  })
+  const client = new Octokit({ auth: `token ${token}` })
 
   try {
     // 1. get username
     const {
       data: { login },
-    } = await octokit.users.getAuthenticated({})
+    } = await client.users.getAuthenticated({})
 
     // 2. find ied teams
-    const { data: teams } = await octokit.teams.list({
+    const { data: teams } = await client.teams.list({
       org: 'inextensodigital',
       headers: {
         Accept: 'application/vnd.github.hellcat-preview+json',
@@ -32,7 +28,7 @@ module.exports = async ({ queryStringParameters }) => {
     const { id } = teams.find(t => t.name === process.env.AUTHORIZED_TEAM)
 
     // 4. check membership of user in authorized team
-    const { status } = await octokit.teams.getMembership({
+    const { status } = await client.teams.getMembership({
       team_id: id,
       username: login,
     })
