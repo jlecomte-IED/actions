@@ -19,25 +19,29 @@ module.exports = async ({ queryStringParameters, headers }) => {
           auth: `token ${process.env.GITHUB_TOKEN}`,
         })
 
-        await client.repos.createDeploymentStatus({
-          owner,
-          repo,
-          deployment_id: deploy,
-          state: 'in_progress',
-          headers: {
-            accept: 'application/vnd.github.flash-preview+json',
-          },
-        })
+        try {
+          await client.repos.createDeploymentStatus({
+            owner,
+            repo,
+            deployment_id: deploy,
+            state: 'in_progress',
+            headers: {
+              accept: 'application/vnd.github.flash-preview+json',
+            },
+          })
 
-        return {
-          statusCode: 200,
-          headers: {
-            'Content-Type': 'text/html; charset=utf-8',
-          },
-          body: template.replace(
-            '__LINK__',
-            `https://github.com/${owner}/${repo}/deployments`,
-          ),
+          return {
+            statusCode: 200,
+            headers: {
+              'Content-Type': 'text/html; charset=utf-8',
+            },
+            body: template.replace(
+              '__LINK__',
+              `https://github.com/${owner}/${repo}/deployments`,
+            ),
+          }
+        } catch (e) {
+          console.error(e)
         }
       }
     }
