@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+set -e
+! [ -z $DEBUG ] && set -x
+set -o pipefail
+
+if [[ -z "$GITHUB_TOKEN" ]]; then
+	echo "Set the GITHUB_TOKEN env variable."
+	exit 1
+fi
+
+if [[ -z "$HEAD" ]]; then
+	echo "Set the HEAD env variable."
+	exit 1
+fi
+
+if [[ -z "$BASE" ]]; then
+	echo "Set the BASE env variable."
+	exit 1
+fi
+
+URI=https://api.github.com
+API_VERSION=v3
+API_HEADER="Accept: application/vnd.github.${API_VERSION}+json"
+AUTH_HEADER="Authorization: token ${GITHUB_TOKEN}"
+
+pullRequestAlreadyExists()
+{
+    curl -XGET -sSL \
+        -H "${AUTH_HEADER}" \
+        -H "${API_HEADER}" \
+        "${URI}/repos/$1/$2/pulls?state=open&head="${HEAD}"&base="${BASE}"" | jq length
+}
+
+pullRequestCreate()
+{
+    payload=$(printf '{"title": "%s → %s", "head": "%s", "base": "%s"}' ${HEAD} ${BASE} ${HEAD} ${BASE})
+    curl -XPOST -qsSL \
+        -H "${AUTH_HEADER}" \
+        -H "${API_HEADER}" \
+        --data "$payload" \
+        "${URI}/repos/$1/$2/pulls" 1> /dev/null
+}
+
+main(){
+	action=$(jq --raw-output .action "$GITHUB_EVENT_PATH")
+	merged=$(jq --raw-output .pull_request.merged "$GITHUB_EVENT_PATH")
+
+	printf "DEBUG -> action: $action merged: $merged\n"
+
+    if ! [[ "$action" == "closed" && "$merged" == "true" ]]; then
+        printf "Pull request not concerned, exiting\n"
+        exit 0;
+    fi
+
+    owner=$(jq --raw-output .pull_request.head.repo.owner.login "$GITHUB_EVENT_PATH")
+    repo=$(jq --raw-output .pull_request.head.repo.name "$GITHUB_EVENT_PATH")
+
+    if [ "0" != $(pullRequestAlreadyExists $owner $repo) ]; then
+        printf "Pull request already exists, exiting\n"
+        exit 0;
+    fi
+
+    printf "Creating pull request ${HEAD} → ${BASE}\n"
+    pullRequestCreate $owner $repo
+    printf "Pull request ${HEAD} → ${BASE} successfully created!\n"
+}
+
+main "$@"
