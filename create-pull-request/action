@@ -42,10 +42,10 @@ pullRequestCreate()
 }
 
 main(){
-	action=$(jq --raw-output .action "$GITHUB_EVENT_PATH")
-	merged=$(jq --raw-output .pull_request.merged "$GITHUB_EVENT_PATH")
+    action=$(jq --raw-output .action "$GITHUB_EVENT_PATH")
+    merged=$(jq --raw-output .pull_request.merged "$GITHUB_EVENT_PATH")
 
-	printf "DEBUG -> action: $action merged: $merged\n"
+    printf "DEBUG -> action: $action merged: $merged\n"
 
     if ! [[ "$action" == "closed" && "$merged" == "true" ]]; then
         printf "Pull request not concerned, exiting\n"
