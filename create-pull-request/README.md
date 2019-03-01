@@ -1,4 +1,4 @@
-# make
+# Auto create a pull request to some destination branch when a pull request gets merged into some source branch
 
 ## Usage
 
