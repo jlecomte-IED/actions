@@ -11,6 +11,6 @@ RUN	apk add --no-cache \
 	curl \
 	jq
 
-COPY create-pull-request/action /usr/bin/create-pull-request-actions
+COPY action /usr/bin/create-pull-request-actions
 
 ENTRYPOINT ["create-pull-request-actions"]
