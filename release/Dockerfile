@@ -6,7 +6,8 @@ LABEL "com.github.actions.icon"="bookmark"
 LABEL "com.github.actions.color"="green"
 
 RUN mkdir -p /app
+ADD package.json yarn.lock /app/
+RUN cd /app && yarn --pure-lockfile
 ADD . /app
-RUN cd /app && yarn
 
 ENTRYPOINT ["/app/release"]
