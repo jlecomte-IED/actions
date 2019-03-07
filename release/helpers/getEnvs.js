@@ -9,8 +9,8 @@ module.exports = () => {
   } = process.env
 
   if (!AWS_PROFILE) {
-    if (!AWS_ACCESS_KEY_ID) throw new Error('Missing env AMAZON_S3_KEY')
-    if (!AWS_SECRET_ACCESS_KEY) throw new Error('Missing env AMAZON_S3_SECRET')
+    if (!AWS_ACCESS_KEY_ID) throw new Error('Missing env AWS_ACCESS_KEY_ID')
+    if (!AWS_SECRET_ACCESS_KEY) throw new Error('Missing env AWS_SECRET_ACCESS_KEY')
   }
   if (!AMAZON_S3_BUCKET_NAME)
     throw new Error('Missing env AMAZON_S3_BUCKET_NAME')
