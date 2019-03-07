@@ -4,5 +4,5 @@ module.exports = ({ header, body }) =>
 ${header}
 ${body}
 `,
-    "binary"
-  );
+    'binary',
+  )
