@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "env AWS_PROFILE=default PROJECT_ID=document-manager GITHUB_EVENT_PATH=./mocks/releases.json node release"
+    "start": "env PROJECT_ID=document-manager GITHUB_EVENT_PATH=./mocks/releases.json node release"
   },
   "dependencies": {
     "aws-sdk": "^2.415.0"

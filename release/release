@@ -38,11 +38,12 @@ try {
   const s3 = new aws.S3()
 
   console.log('# Put file on Amazon S3')
-  s3.putObject({ Bucket, Key, Body }, resp => {
-    if (!resp) {
-      console.log('# File send on Amazon S3')
+  s3.putObject({ Bucket, Key, Body }, err => {
+    if (err) {
+      throw new Error(err.message)
     } else {
-      throw new Error(`${resp.message}`)
+      console.log('# File sent to Amazon S3')
+      process.exit()
     }
   })
 } catch (error) {
