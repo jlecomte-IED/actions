@@ -1,0 +1,12 @@
+{
+  "name": "github-actions",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "env PROJECT_ID=document-manager GITHUB_EVENT_PATH=./mocks/releases.json node release"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.415.0"
+  }
+}

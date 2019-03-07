@@ -1,0 +1,52 @@
+#!/usr/bin/env node
+/* eslint-disable import/no-dynamic-require,global-require */
+
+const aws = require('aws-sdk')
+
+const getEnvs = require('./helpers/getEnvs')
+const createHeader = require('./helpers/createHeader')
+const createBody = require('./helpers/createBody')
+
+try {
+  console.log('# Get envs')
+  const {
+    AMAZON_S3_BUCKET_NAME: Bucket,
+    PROJECT_ID,
+    GITHUB_EVENT_PATH,
+  } = getEnvs()
+
+  console.log('# Get release')
+  const {
+    release: { id: releaseID, tag_name, body, draft, created_at, published_at },
+    repository: { id: repositoryID },
+  } = require(GITHUB_EVENT_PATH)
+
+  const status = draft ? 'Draft' : 'Publish'
+
+  console.log('# Create body')
+  const header = createHeader({
+    status,
+    published_at,
+    created_at,
+    tag_name,
+  })
+  const Body = createBody({ header, body })
+
+  console.log('# Create path')
+  const Key = `raw/${PROJECT_ID}/${repositoryID}-${releaseID}.md`
+
+  const s3 = new aws.S3()
+
+  console.log('# Put file on Amazon S3')
+  s3.putObject({ Bucket, Key, Body }, err => {
+    if (err) {
+      throw new Error(err.message)
+    } else {
+      console.log('# File sent to Amazon S3')
+      process.exit()
+    }
+  })
+} catch (error) {
+  console.log(error)
+  process.exit(1)
+}
