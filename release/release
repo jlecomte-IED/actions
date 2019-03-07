@@ -1,5 +1,6 @@
+#!/usr/bin/env node
+
 const aws = require("aws-sdk");
-const fs = require("fs");
 
 const getEnvs = require("./helpers/getEnvs");
 const createBody = require("./helpers/createBody");
@@ -14,8 +15,8 @@ try {
 
   console.log("# Get release");
   const {
-    release: { id: releaseID, tag_name, body, draft, created_at, published_at },
-    repository: { id: repositoryID, full_name }
+    release: { id: releaseID, body, draft, created_at, published_at },
+    repository: { id: repositoryID }
   } = require(GITHUB_EVENT_PATH);
 
   const status = draft ? "Draft" : "Publish";
