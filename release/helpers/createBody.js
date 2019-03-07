@@ -1,10 +1,7 @@
-module.exports = ({ status, published_at, created_at, body }) =>
+module.exports = ({ header, body }) =>
   new Buffer(
     `
----
-status: ${status}
-date: ${published_at || created_at}
----
+${header}
 ${body}
 `,
     "binary"
