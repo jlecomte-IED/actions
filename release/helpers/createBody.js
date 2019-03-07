@@ -1,8 +1,1 @@
-module.exports = ({ header, body }) =>
-  new Buffer(
-    `
-${header}
-${body}
-`,
-    'binary',
-  )
+module.exports = ({ header, body }) => new Buffer(`${header} ${body}`, 'binary')
