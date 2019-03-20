@@ -47,7 +47,7 @@ main(){
     pullRequestHead=$(jq --raw-output .pull_request.head.label "$GITHUB_EVENT_PATH")
 
     if [[ "$pullRequestHead" != "$HEAD" ]]; then
-        printf "Pull request HEAD not matching with HEAD of configured action\n"
+        printf "Pull request HEAD:%s not matching with HEAD:%s of configured action\n" $pullRequestHead $HEAD
         exit 0;
     fi
 
