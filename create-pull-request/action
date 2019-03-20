@@ -28,7 +28,7 @@ pullRequestAlreadyExists()
     curl -XGET -sSL \
         -H "${AUTH_HEADER}" \
         -H "${API_HEADER}" \
-        "${URI}/repos/$1/$2/pulls?state=open&head="${HEAD}"&base="${BASE}"" | jq length
+        "${URI}/repos/$1/$2/pulls?state=open&head="${1}:${HEAD}"&base="${BASE}"" | jq -e 'length != 0' 1> /dev/null
 }
 
 pullRequestCreate()
@@ -62,7 +62,7 @@ main(){
     owner=$(jq --raw-output .pull_request.head.repo.owner.login "$GITHUB_EVENT_PATH")
     repo=$(jq --raw-output .pull_request.head.repo.name "$GITHUB_EVENT_PATH")
 
-    if [ "0" != $(pullRequestAlreadyExists $owner $repo) ]; then
+    if [[ $(pullRequestAlreadyExists $owner $repo) ]]; then
         printf "Pull request already exists, exiting\n"
         exit 0;
     fi
