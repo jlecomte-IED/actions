@@ -2,6 +2,9 @@
 
 Inextenso Digital collection of useful utilities for interacting with GitHub Actions.
 
+
+[github-workflow:](https://github.com/inextensodigital/actions/tree/master/github-workflow) Manage Github Action workflows and actions by cli. Allows you to script edition.
+
 ## Implement it in your project
  - Import .github/prod-deploy.workflow in your `.github/main.workflow`
  - Import .github/branch.workflow in your `.github/main.workflow`
