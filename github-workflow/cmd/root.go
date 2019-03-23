@@ -59,7 +59,7 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&Output, "output", "d", GithubWorkflowPath, "Ouput path")
+	rootCmd.PersistentFlags().StringVarP(&Output, "output", "d", GithubWorkflowPath, "Output path")
 
 	rootCmd.AddCommand(lintCmd)
 	rootCmd.AddCommand(initCmd)
