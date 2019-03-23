@@ -63,4 +63,5 @@ func init() {
 
 	rootCmd.AddCommand(lintCmd)
 	rootCmd.AddCommand(initCmd)
+	rootCmd.Version = "2019.12.1"
 }
