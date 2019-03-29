@@ -31,9 +31,10 @@ var actionCmd = &cobra.Command{
 }
 
 var actionLsCmd = &cobra.Command{
-	Use:   "ls [ID]",
-	Short: "List actions",
-	Args:  cobra.MaximumNArgs(1),
+	Use:     "list [ID]",
+	Short:   "List actions",
+	Aliases: []string{"ls"},
+	Args:    cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		conf := parser.LoadData()
 
@@ -56,9 +57,10 @@ var actionLsCmd = &cobra.Command{
 }
 
 var actionRenameCmd = &cobra.Command{
-	Use:   "rename SOURCE TARGET",
-	Short: "Rename action",
-	Args:  cobra.ExactArgs(2),
+	Use:     "rename SOURCE TARGET",
+	Short:   "Rename action",
+	Aliases: []string{"mv"},
+	Args:    cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		source, target := args[0], args[1]
 		conf := parser.LoadData()
@@ -98,9 +100,10 @@ var actionRenameCmd = &cobra.Command{
 }
 
 var actionCreateCmd = &cobra.Command{
-	Use:   "create ID USE",
-	Short: "Create new action",
-	Args:  cobra.MinimumNArgs(2),
+	Use:     "create ID USE",
+	Short:   "Create new action",
+	Args:    cobra.MinimumNArgs(2),
+	Aliases: []string{"new", "c"},
 	Run: func(cmd *cobra.Command, args []string) {
 		id, use := args[0], args[1]
 
@@ -146,16 +149,17 @@ func removeFromSlice(slice []string, s int) []string {
 }
 
 var actionRemoveCmd = &cobra.Command{
-	Use:   "rm NAME",
-	Short: "Remove action",
-	Args:  cobra.ExactArgs(1),
+	Use:     "remove ID",
+	Short:   "Remove action",
+	Aliases: []string{"rm"},
+	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		name := args[0]
+		id := args[0]
 		conf := parser.LoadData()
 
 		var ia int
 		for k, action := range conf.Actions {
-			if action.Identifier == name {
+			if action.Identifier == id {
 				ia = k
 			}
 		}
@@ -167,7 +171,7 @@ var actionRemoveCmd = &cobra.Command{
 		listWorkflow := make([]*model.Workflow, 0)
 		for _, workflow := range conf.Workflows {
 			for kr, resolver := range workflow.Resolves {
-				if resolver == name {
+				if resolver == id {
 					workflow.Resolves = removeFromSlice(workflow.Resolves, kr)
 				}
 			}
@@ -179,7 +183,7 @@ var actionRemoveCmd = &cobra.Command{
 		listAction = make([]*model.Action, 0)
 		for _, action := range conf.Actions {
 			for kr, need := range action.Needs {
-				if need == name {
+				if need == id {
 					action.Needs = removeFromSlice(action.Needs, kr)
 				}
 			}
@@ -199,6 +203,7 @@ func init() {
 	actionCreateCmd.Flags().StringArrayVarP(&Secret, "secret", "s", []string{}, "")
 	actionCmd.AddCommand(actionRenameCmd)
 	actionCmd.AddCommand(actionRemoveCmd)
+	actionCmd.Aliases = []string{"a"}
 
 	rootCmd.AddCommand(actionCmd)
 }

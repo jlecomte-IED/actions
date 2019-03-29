@@ -2,7 +2,7 @@
 
 Manage Github Action workflows and actions by cli. Allows you to script edition.
 
-### Available commands:
+### Available commands
 
 - [x] github-workflow initialize
 - [x] github-workflow lint
@@ -10,7 +10,7 @@ Manage Github Action workflows and actions by cli. Allows you to script edition.
 - [x] github-workflow workflow create ID ON [--resolve=<action>]
 - [x] github-workflow workflow add ID --resolve=<action>
 - [x] github-workflow workflow rename SOURCE TARGET
-- [ ] github-workflow workflow rm NAME
+- [ ] github-workflow workflow rm ID
 - [ ] github-workflow workflow merge ID [--on=]
 
 - [x] github-workflow action ls [ID]
@@ -21,15 +21,17 @@ Manage Github Action workflows and actions by cli. Allows you to script edition.
 ### Developing the github workflow
 
 ### Getting it
+
 You'll need a copy of go v1.11 or higher. Get binary directly from releases
 
 - Simple build, with latest versions of all dependencies:
-`go get inextensodigital/actions`
+  `go get github.com/inextensodigital/actions/github-workflow`
 
-- Repoducible build, using god mod to get pinned dependencies: 
+- Repoducible build, using god mod to get pinned dependencies:
+
 ```shell
-go get inextensodigital/actions
-cd $GOPATH/src/inextensodigital/actions/client
+git clone get git@github.com:inextensodigital/actions.git
+cd actions/github-workflow
 go mod download
 go build
 ```
@@ -39,18 +41,19 @@ go build
 ```shell
 #!/usr/bin/env bash
 
+github_username="your-organization"
 action_name="Auto create master → dev PRs"
 action_image="inextensodigital/actions/create-pull-request@master"
 unified_workflow_name="On pull request"
 
-for project in 'project1.api' 'project2.api' 'project3.api'
+for project in 'repo1' 'repo2' 'repo3'
 do
-    git clone "git@github.com:yourorganisation/$project.git" "/tmp/$project"
+    git clone --depth=1 --jobs=(sysctl -n hw.physicalcpu) "git@github.com:$github_username/$project.git" "/tmp/$project"
     cd "/tmp/$project"
 
     set -e
     set -o pipefail
-    github-workflow initialize || echo "Already initialized ✓"
+    github-workflow initialize || echo "Workflow already initialized ✓"
     github-workflow action ls "$action_name" &> /dev/null || github-workflow action create "$action_name" "$action_image" --secret=GITHUB_TOKEN --env BASE=dev --env HEAD=master
     workflow_name=$(github-workflow workflow ls --on="pull_request" | head -n 1) && \
         ( \
@@ -70,17 +73,15 @@ do
     if ! git diff-index --quiet HEAD --; then
         git commit -m "chore: $action_name" -m "Thanks to Github Actions"
         git push origin chore-auto-create-master-dev-prs
-        hub pull-request -b yourorganisation:master -l enhancement -r reviewer_nickname -m "$action_name"
+        hub pull-request -b $github_username:master -l enhancement -r reviewer_nickname -m "$action_name"
     fi
 
     cd /tmp && rm -rf "/tmp/$project"
 done
 ```
 
+### Example of stdin usage
 
-
-### Example of stdin usage 
 ```shell
-cat .github/stdin.workflow|./github-workflow action ls
+cat .github/stdin.workflow | github-workflow action ls
 ```
-

@@ -59,9 +59,10 @@ var workflowLsCmd = &cobra.Command{
 }
 
 var workflowCreateCmd = &cobra.Command{
-	Use:   "create ID ON",
-	Short: "Create a new workflow",
-	Args:  cobra.ExactArgs(2),
+	Use:     "create ID ON",
+	Short:   "Create a new workflow",
+	Aliases: []string{"new", "c"},
+	Args:    cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		id, on := args[0], args[1]
 
@@ -87,18 +88,19 @@ var workflowCreateCmd = &cobra.Command{
 }
 
 var workflowAddCmd = &cobra.Command{
-	Use:   "add ID",
-	Short: "Add action to a workflow",
-	Args:  cobra.ExactArgs(1),
+	Use:     "add ID",
+	Short:   "Add action to a workflow",
+	Args:    cobra.ExactArgs(1),
+	Aliases: []string{"a"},
 	Run: func(cmd *cobra.Command, args []string) {
-		name := args[0]
+		id := args[0]
 
 		conf := parser.LoadData()
-		workflow := conf.GetWorkflow(name)
+		workflow := conf.GetWorkflow(id)
 
 		if workflow == nil {
-			fmt.Fprintf(os.Stderr, "Unknown workflow '%s'. You have to create it first or to check if you have made a typo.\n", name)
-			os.Exit(1)				
+			fmt.Fprintf(os.Stderr, "Unknown workflow '%s'. You have to create it first or to check if you have made a typo.\n", id)
+			os.Exit(1)
 		}
 
 		for _, action := range Action {
@@ -161,6 +163,7 @@ var workflowRenameCmd = &cobra.Command{
 
 func init() {
 	workflowCmd.AddCommand(workflowLsCmd)
+	workflowCmd.Aliases = []string{"w"}
 	workflowLsCmd.Flags().StringVarP(&On, "on", "o", "", "Filter on")
 
 	workflowCmd.AddCommand(workflowAddCmd)

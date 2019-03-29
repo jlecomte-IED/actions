@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
+
+	"github.com/actions/workflow-parser/parser"
 
 	"github.com/actions/workflow-parser/model"
 )
@@ -39,7 +42,7 @@ func Encode(in *model.Configuration) ([]byte, error) {
 
 		if len(action.Needs) > 0 {
 			b.WriteString(
-				fmt.Sprintf("  needs = [\n    \"%s\"\n  ]\n", strings.Join(action.Needs, "\",\n    \"")),
+				fmt.Sprintf("  needs = [\n    \"%s\",\n  ]\n", strings.Join(action.Needs, "\",\n    \"")),
 			)
 		}
 
@@ -76,11 +79,18 @@ func Encode(in *model.Configuration) ([]byte, error) {
 
 // Write bytes content
 func Write(c []byte, s string) {
+	r := bytes.NewReader(c)
+	_, err := parser.Parse(r)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		os.Exit(1)
+	}
+
 	if s == "-" {
 		s = "/dev/stdout"
 	}
 
-	err := ioutil.WriteFile(s, c, 0644)
+	err = ioutil.WriteFile(s, c, 0644)
 	if err != nil {
 		panic(err)
 	}

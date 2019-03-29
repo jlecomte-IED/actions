@@ -1,11 +1,12 @@
 package printer
 
 import (
-	"testing" 
 	"fmt"
 	"io/ioutil"
-	"github.com/stretchr/testify/assert"
+	"testing"
+
 	"github.com/actions/workflow-parser/model"
+	"github.com/stretchr/testify/assert"
 )
 
 type encoderTest struct {
@@ -27,19 +28,22 @@ func TestEncode(t *testing.T) {
 			Output: "empty",
 		},
 		{
-			ID:     "action struct",
-			Input:  &model.Configuration{
-				Actions: []*model.Action {
-					&model.Action{Identifier: "Docker Login", Uses: uh, Env: envList, Secrets: []string{"DOCKER_USERNAME", "DOCKER_PASSWORD"},},
+			ID: "action struct",
+			Input: &model.Configuration{
+				Actions: []*model.Action{
+					&model.Action{Identifier: "deploy", Uses: uh, Needs: []string{"with secrets", "with env"}, Env: envList},
+					&model.Action{Identifier: "with secrets", Needs: []string{"bare"}, Uses: uh, Env: envList, Secrets: []string{"SUPER_SECRET", "SUPER_PASSWORD"}},
+					&model.Action{Identifier: "with env", Uses: uh, Env: map[string]string{"SUPER_ENV": "value"}},
+					&model.Action{Identifier: "bare", Uses: uh, Env: envList},
 				},
 			},
 			Output: "action",
 		},
 		{
-			ID:     "workflow struct",
-			Input:  &model.Configuration{
-				Workflows: []*model.Workflow {
-					&model.Workflow{Identifier: "on pull request merge, delete the branch", On: "pull_request", Resolves: []string{"branch cleanup"},},
+			ID: "workflow struct",
+			Input: &model.Configuration{
+				Workflows: []*model.Workflow{
+					&model.Workflow{Identifier: "on pull request merge, delete the branch", On: "pull_request", Resolves: []string{"branch cleanup"}},
 				},
 			},
 			Output: "workflow",

@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Output alternative to default path
 var Output string
 
 // GithubWorkflowPath Github workflow file path
@@ -21,8 +22,9 @@ var rootCmd = &cobra.Command{
 }
 
 var lintCmd = &cobra.Command{
-	Use:   "lint",
-	Short: "Check file integrity",
+	Use:     "lint",
+	Short:   "Check file integrity",
+	Aliases: []string{"l"},
 	Run: func(cmd *cobra.Command, args []string) {
 		parser.LoadData()
 		fmt.Fprint(os.Stderr, "Configuration 👌")
@@ -30,8 +32,9 @@ var lintCmd = &cobra.Command{
 }
 
 var initCmd = &cobra.Command{
-	Use:   "initialize",
-	Short: "Initialize file integrity",
+	Use:     "initialize",
+	Short:   "Initialize file integrity",
+	Aliases: []string{"i", "init"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if _, err := os.Stat(GithubWorkflowPath); os.IsNotExist(err) {
 			dir := filepath.Dir(GithubWorkflowPath)
@@ -59,8 +62,9 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&Output, "output", "d", GithubWorkflowPath, "Ouput path")
+	rootCmd.PersistentFlags().StringVarP(&Output, "output", "d", GithubWorkflowPath, "Output path")
 
 	rootCmd.AddCommand(lintCmd)
 	rootCmd.AddCommand(initCmd)
+	rootCmd.Version = "2019.12.1"
 }
