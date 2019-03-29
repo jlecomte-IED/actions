@@ -42,7 +42,7 @@ func Encode(in *model.Configuration) ([]byte, error) {
 
 		if len(action.Needs) > 0 {
 			b.WriteString(
-				fmt.Sprintf("  needs = [\n    \"%s\"\n  ]\n", strings.Join(action.Needs, "\",\n    \"")),
+				fmt.Sprintf("  needs = [\n    \"%s\",\n  ]\n", strings.Join(action.Needs, "\",\n    \"")),
 			)
 		}
 
