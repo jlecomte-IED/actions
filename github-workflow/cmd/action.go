@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -196,6 +197,41 @@ var actionRemoveCmd = &cobra.Command{
 	},
 }
 
+var actionInspectCmd = &cobra.Command{
+	Use:   "inspect ID [ID...]",
+	Short: "Display detailed information on one or more actions",
+	Args:  cobra.MinimumNArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		var exitCode = 0
+		conf := parser.LoadData()
+		for _, id := range args {
+			action := conf.GetAction(id)
+			if action == nil {
+				fmt.Fprintf(os.Stderr, "Error: no such action: %s\n", id)
+				exitCode = 1
+			} else {
+				jsonOutput, err := json.MarshalIndent(action, "", "    ")
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				fmt.Fprintf(os.Stdout, "%s\n", string(jsonOutput))
+			}
+		}
+
+		os.Exit(exitCode)
+	},
+}
+
+var actionUpdateCmd = &cobra.Command{
+	Use:   "update ID",
+	Short: "Update an action",
+	Run: func(cmd *cobra.Command, args []string) {
+		cmd.Help()
+		os.Exit(0)
+	},
+}
+
 func init() {
 	actionCmd.AddCommand(actionLsCmd)
 	actionCmd.AddCommand(actionCreateCmd)
@@ -203,6 +239,12 @@ func init() {
 	actionCreateCmd.Flags().StringArrayVarP(&Secret, "secret", "s", []string{}, "")
 	actionCmd.AddCommand(actionRenameCmd)
 	actionCmd.AddCommand(actionRemoveCmd)
+	actionCmd.AddCommand(actionInspectCmd)
+	actionCmd.AddCommand(actionUpdateCmd)
+	actionUpdateCmd.Flags().StringArrayVarP(&Env, "env-add", "", []string{}, "Add or update an environment variable")
+	actionUpdateCmd.Flags().StringArrayVarP(&Secret, "env-rm", "", []string{}, "Remove an environment variable")
+	actionUpdateCmd.Flags().StringArrayVarP(&Env, "secret-add", "", []string{}, "Add or update a secret")
+	actionUpdateCmd.Flags().StringArrayVarP(&Secret, "secret-rm", "", []string{}, "Remove a secret")
 	actionCmd.Aliases = []string{"a"}
 
 	rootCmd.AddCommand(actionCmd)
