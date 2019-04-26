@@ -22,6 +22,60 @@ var Env []string
 // Secret passed at creation
 var Secret []string
 
+// EnvAdd list of options
+var EnvAdd = NewListOpts()
+
+// EnvRm list of options
+var EnvRm = NewListOpts()
+
+// SecretAdd list of options
+var SecretAdd = NewListOpts()
+
+// SecretRm list of options
+var SecretRm = NewListOpts()
+
+// ListOpts list of options
+type ListOpts struct {
+	values *[]string
+}
+
+// NewListOpts creates a new ListOpts with the specified validator.
+func NewListOpts() ListOpts {
+	var values []string
+	return *NewListOptsRef(&values)
+}
+
+// NewListOptsRef creates a new ListOpts with the specified values and validator.
+func NewListOptsRef(values *[]string) *ListOpts {
+	return &ListOpts{
+		values: values,
+	}
+}
+
+func (opts *ListOpts) String() string {
+	if len(*opts.values) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("%v", *opts.values)
+}
+
+// Set validates if needed the input value and adds it to the
+// internal slice.
+func (opts *ListOpts) Set(value string) error {
+	(*opts.values) = append((*opts.values), value)
+	return nil
+}
+
+// Type returns a string name for this Option type
+func (opts *ListOpts) Type() string {
+	return "list"
+}
+
+// GetAll returns the values of slice.
+func (opts *ListOpts) GetAll() []string {
+	return (*opts.values)
+}
+
 var actionCmd = &cobra.Command{
 	Use:   "action",
 	Short: "Actions",
@@ -226,10 +280,96 @@ var actionInspectCmd = &cobra.Command{
 var actionUpdateCmd = &cobra.Command{
 	Use:   "update ID",
 	Short: "Update an action",
+	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
-		os.Exit(0)
+		var id = args[0]
+		var exitCode = 0
+
+		var flags = cmd.Flags()
+		conf := parser.LoadData()
+
+		if flags.Changed("env-add") {
+			value := flags.Lookup("env-add").Value.(*ListOpts)
+			for _, v := range value.GetAll() {
+				env := strings.SplitN(v, "=", 2)
+				if len(env) != 2 {
+					fmt.Fprintf(os.Stderr, "Invalid env value '%s'. You should comply to the format: 'key=value'\n", v)
+					os.Exit(1)
+				}
+
+				key, value := env[0], env[1]
+				err := addEnvVarToAction(conf, id, key, value)
+				if err != nil {
+					fmt.Fprint(os.Stderr, err)
+					os.Exit(1)
+				}
+			}
+		}
+
+		if flags.Changed("env-rm") {
+			value := flags.Lookup("env-rm").Value.(*ListOpts)
+			for _, env := range value.GetAll() {
+				action := conf.GetAction(id)
+				if action.Env != nil {
+					delete(action.Env, env)
+				}
+			}
+		}
+
+		if flags.Changed("secret-add") {
+			value := flags.Lookup("secret-add").Value.(*ListOpts)
+			for _, secret := range value.GetAll() {
+				action := conf.GetAction(id)
+				if contains(action.Secrets, secret) {
+					fmt.Fprintf(os.Stderr, "Secret '%s' already defined\n", secret)
+					os.Exit(1)
+				}
+				action.Secrets = append(action.Secrets, secret)
+			}
+		}
+
+		if flags.Changed("secret-rm") {
+			value := flags.Lookup("secret-rm").Value.(*ListOpts)
+			for _, secret := range value.GetAll() {
+				action := conf.GetAction(id)
+				if !contains(action.Secrets, secret) {
+					fmt.Fprintf(os.Stderr, "Secret '%s' not defined\n", secret)
+					os.Exit(1)
+				}
+				action.Secrets = removeFromSlice(action.Secrets, index(action.Secrets, secret))
+				fmt.Printf("## secret rm: %s\n", secret)
+			}
+		}
+
+		content, _ := printer.Encode(conf)
+		printer.Write(content, Output)
+
+		os.Exit(exitCode)
 	},
+}
+
+func index(slice []string, item string) int {
+	for i, value := range slice {
+		if value == item {
+			return i
+		}
+	}
+	return -1
+}
+
+func addEnvVarToAction(conf *model.Configuration, id string, name string, value string) error {
+	action := conf.GetAction(id)
+	if action.Env == nil {
+		action.Env = make(map[string]string)
+	}
+
+	if _, ok := action.Env[name]; ok {
+		return fmt.Errorf("Env key : '%s' already defined\n", name)
+	}
+
+	action.Env[name] = value
+
+	return nil
 }
 
 func init() {
@@ -241,10 +381,10 @@ func init() {
 	actionCmd.AddCommand(actionRemoveCmd)
 	actionCmd.AddCommand(actionInspectCmd)
 	actionCmd.AddCommand(actionUpdateCmd)
-	actionUpdateCmd.Flags().StringArrayVarP(&Env, "env-add", "", []string{}, "Add or update an environment variable")
-	actionUpdateCmd.Flags().StringArrayVarP(&Secret, "env-rm", "", []string{}, "Remove an environment variable")
-	actionUpdateCmd.Flags().StringArrayVarP(&Env, "secret-add", "", []string{}, "Add or update a secret")
-	actionUpdateCmd.Flags().StringArrayVarP(&Secret, "secret-rm", "", []string{}, "Remove a secret")
+	actionUpdateCmd.Flags().Var(&EnvAdd, "env-add", "Add an environment variable")
+	actionUpdateCmd.Flags().Var(&EnvRm, "env-rm", "Remove an environment variable")
+	actionUpdateCmd.Flags().Var(&SecretAdd, "secret-add", "Add or update a secret")
+	actionUpdateCmd.Flags().Var(&SecretRm, "secret-rm", "Remove a secret")
 	actionCmd.Aliases = []string{"a"}
 
 	rootCmd.AddCommand(actionCmd)
