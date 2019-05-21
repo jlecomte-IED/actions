@@ -53,7 +53,7 @@ unified_workflow_name="On pull request"
 
 for project in 'repo1' 'repo2' 'repo3'
 do
-    git clone --depth=1 --jobs=(sysctl -n hw.physicalcpu) "git@github.com:$github_username/$project.git" "/tmp/$project"
+    git clone --depth=1 --jobs=$(sysctl -n hw.physicalcpu) "git@github.com:$github_username/$project.git" "/tmp/$project"
     cd "/tmp/$project"
 
     set -e
