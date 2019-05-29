@@ -31,7 +31,7 @@ func TestEncode(t *testing.T) {
 			ID: "action struct",
 			Input: &model.Configuration{
 				Actions: []*model.Action{
-					&model.Action{Identifier: "deploy", Uses: uh, Needs: []string{"with secrets", "with env"}, Env: envList},
+					&model.Action{Identifier: "deploy", Uses: uh, Needs: []string{"with secrets", "with env"}, Env: envList, Runs: &model.StringCommand{Value: `bash ./scripts/test.sh`} },
 					&model.Action{Identifier: "with secrets", Needs: []string{"bare"}, Uses: uh, Env: envList, Secrets: []string{"SUPER_SECRET", "SUPER_PASSWORD"}},
 					&model.Action{Identifier: "with env", Uses: uh, Env: map[string]string{"SUPER_ENV": "value"}},
 					&model.Action{Identifier: "bare", Uses: uh, Env: envList},

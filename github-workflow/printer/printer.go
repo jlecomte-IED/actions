@@ -51,6 +51,11 @@ func Encode(in *model.Configuration) ([]byte, error) {
 				fmt.Sprintf("  args = \"%s\"\n", strings.Join(action.Args.Split(), " ")),
 			)
 		}
+		if action.Runs != nil && len(action.Runs.Split()) > 0 {
+			b.WriteString(
+				fmt.Sprintf("  runs = \"%s\"\n", strings.Join(action.Runs.Split(), " ")),
+			)
+		}
 
 		if len(action.Secrets) > 0 {
 			b.WriteString("  secrets = [\n")
