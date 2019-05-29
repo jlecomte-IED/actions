@@ -26,7 +26,7 @@ func Encode(in *model.Configuration) ([]byte, error) {
 
 		if len(workflow.Resolves) > 0 {
 			b.WriteString(
-				fmt.Sprintf("  resolves = [\n    \"%s\"\n  ]\n", strings.Join(workflow.Resolves, "\",\n    \"")),
+				fmt.Sprintf("  resolves = [\n    \"%s\",\n  ]\n", strings.Join(workflow.Resolves, "\",\n    \"")),
 			)
 		}
 		b.WriteString("}\n\n")
