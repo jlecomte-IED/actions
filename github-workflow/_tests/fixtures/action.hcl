@@ -4,6 +4,7 @@ action "deploy" {
     "with secrets",
     "with env",
   ]
+  runs = "bash ./scripts/test.sh"
 }
 
 action "with secrets" {
