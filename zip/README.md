@@ -18,7 +18,7 @@ If files are stored in a given path and you want to strip this path in your zip 
 ```
 action "Package" {
   uses = "inextensodigital/actions/zip@master"
-  args = ["-c", "cd somedir && zip package.zip *]"
+  args = ["-c", "cd somedir && zip package.zip *"]
   run = "sh"
 }
 ```
