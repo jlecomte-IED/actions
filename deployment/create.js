@@ -6,7 +6,7 @@ const {
 } = require('./tools')
 const api = require('./api')
 
-const environment = process.env.GH_ENVIRONMENT || 'production'
+const environment = process.env.DEPLOY_ENVIRONMENT || 'production'
 
 module.exports = async () => {
   const deploy = await api.createDeploymentFromRef({
