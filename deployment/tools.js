@@ -10,6 +10,7 @@ const repo = process.env.GITHUB_REPOSITORY.substring(owner.length + 1)
 const ref = process.env.GITHUB_REF
 const refName = process.env.GITHUB_REF.split('/')[2]
 const token = process.env.GITHUB_TOKEN
+const environment = process.env.DEPLOY_ENVIRONMENT || 'production'
 const eventPath = process.env.GITHUB_EVENT_PATH
 const home = process.env.HOME
 
@@ -19,6 +20,7 @@ module.exports = {
   ref,
   refName,
   token,
+  environment,
   context: {
     repo: add => ({
       repo,
