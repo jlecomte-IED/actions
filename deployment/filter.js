@@ -9,9 +9,11 @@ module.exports = async () => {
 
   switch (type) {
     case 'deployment_status':
-      if (event.deployment_status) {
-        pass = event.deployment_status.state === value
+      const current_state = event.deployment_status.state
+      if (current_state) {
+        pass = current_state === value
       }
+      console.info(`${current_state} === ${value} ?`, pass ? 'yes' : 'no')
       break
     default:
       console.error(`Filter ${type} not exists`)
