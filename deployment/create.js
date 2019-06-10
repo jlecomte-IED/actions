@@ -7,10 +7,6 @@ const {
 const api = require('./api')
 
 const environment = process.env.DEPLOY_ENVIRONMENT || 'production'
-if (!['pending', 'in_progress'].includes(state)) {
-  console.error(`invalid "${state}" deployment status. Should be one of ['pending', 'in_progress'].`)
-  process.exit(1)
-}
 
 module.exports = async () => {
   const deploy = await api.createDeploymentFromRef({
