@@ -1,5 +1,5 @@
 const {
-  owner, repo, ref, context,
+  owner, repo, ref, context, environment,
 } = require('./tools')
 
 const kit = context.octokit()
@@ -10,6 +10,7 @@ const api = {
       owner,
       repo,
       ref,
+      environment,
       ...add,
     })
 

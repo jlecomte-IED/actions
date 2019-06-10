@@ -6,6 +6,8 @@ const {
 } = require('./tools')
 const api = require('./api')
 
+const environment = process.env.DEPLOY_ENVIRONMENT || 'production'
+
 module.exports = async () => {
   const deploy = await api.createDeploymentFromRef({
     auto_merge: false,
@@ -14,10 +16,14 @@ module.exports = async () => {
       ref,
       tag: refName,
     }),
-    description: `Production deploy for tag ${refName}`,
+    description: `${environment} deploy for tag ${refName}`,
   })
 
   await context.writeJSON('deployment', deploy)
+
+  if (environment !== 'production') {
+    process.exit(0)
+  }
 
   const sign = crypto.createSign('RSA-SHA256')
   sign.update(owner + repo + deploy.id + refName)
