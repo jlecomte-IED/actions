@@ -7,14 +7,13 @@ const {
 const api = require('./api')
 
 const environment = process.env.DEPLOY_ENVIRONMENT || 'production'
-const state = process.env.DEPLOY_STATUS || 'pending'
 if (!['pending', 'in_progress'].includes(state)) {
   console.error(`invalid "${state}" deployment status. Should be one of ['pending', 'in_progress'].`)
   process.exit(1)
 }
 
 module.exports = async () => {
-  const deploymentArgs = {
+  const deploy = await api.createDeploymentFromRef({
     auto_merge: false,
     required_contexts: [],
     payload: JSON.stringify({
@@ -22,9 +21,7 @@ module.exports = async () => {
       tag: refName,
     }),
     description: `${environment} deploy for tag ${refName}`,
-  }
-  console.log('Deployment args', deploymentArgs)
-  const deploy = await api.createDeploymentFromRef(deploymentArgs)
+  })
 
   await context.writeJSON('deployment', deploy)
 

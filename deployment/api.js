@@ -1,18 +1,21 @@
 const {
-  owner, repo, ref, context, environment,
+  owner, repo, ref, context, environment, state,
 } = require('./tools')
 
 const kit = context.octokit()
 
 const api = {
   createDeploymentFromRef: async (add) => {
-    const { data: deployment } = await kit.repos.createDeployment({
+    const args = {
       owner,
       repo,
       ref,
       environment,
+      state,
       ...add,
-    })
+    }
+    console.log('Deployment args', args)
+    const { data: deployment } = await kit.repos.createDeployment(args)
 
     return deployment
   },
