@@ -17,7 +17,7 @@ const api = {
       repo,
       ref,
       environment,
-      deploymentState,
+      state: deploymentState,
       ...add,
     }
     console.log('Deployment args', args)
