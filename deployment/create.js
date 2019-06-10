@@ -14,7 +14,7 @@ if (!['pending', 'in_progress'].includes(state)) {
 }
 
 module.exports = async () => {
-  const deploy = await api.createDeploymentFromRef({
+  const deploymentArgs = {
     auto_merge: false,
     required_contexts: [],
     payload: JSON.stringify({
@@ -22,7 +22,9 @@ module.exports = async () => {
       tag: refName,
     }),
     description: `${environment} deploy for tag ${refName}`,
-  })
+  }
+  console.log('Deployment args', deploymentArgs)
+  const deploy = await api.createDeploymentFromRef(deploymentArgs)
 
   await context.writeJSON('deployment', deploy)
 
