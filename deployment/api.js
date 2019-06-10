@@ -1,17 +1,23 @@
 const {
-  owner, repo, ref, context, environment, state,
+  owner, repo, ref, context, environment, state: deploymentState,
 } = require('./tools')
 
 const kit = context.octokit()
 
 const api = {
+  
   createDeploymentFromRef: async (add) => {
+    if (!['pending', 'in_progress'].includes(deploymentState)) {
+      console.error(`invalid "${deploymentState}" deployment status. Should be one of ['pending', 'in_progress'].`)
+      process.exit(1)
+    }
+
     const args = {
       owner,
       repo,
       ref,
       environment,
-      state,
+      deploymentState,
       ...add,
     }
     console.log('Deployment args', args)
