@@ -7,6 +7,11 @@ const {
 const api = require('./api')
 
 const environment = process.env.DEPLOY_ENVIRONMENT || 'production'
+const state = process.env.DEPLOY_STATUS || 'pending'
+if (!['pending', 'in_progress'].includes(state)) {
+  console.error(`invalid "${state}" deployment status. Should be one of ['pending', 'in_progress'].`)
+  process.exit(1)
+}
 
 module.exports = async () => {
   const deploy = await api.createDeploymentFromRef({
@@ -28,9 +33,12 @@ module.exports = async () => {
   const sign = crypto.createSign('RSA-SHA256')
   sign.update(owner + repo + deploy.id + refName)
 
+
+
   const query = stringify({
     owner,
     repo,
+    state,
     deploy: deploy.id,
     tag: refName,
     sign: sign.sign(process.env.PRIVATE_KEY, 'hex'),
