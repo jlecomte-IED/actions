@@ -33,7 +33,6 @@ module.exports = async () => {
   const query = stringify({
     owner,
     repo,
-    state,
     deploy: deploy.id,
     tag: refName,
     sign: sign.sign(process.env.PRIVATE_KEY, 'hex'),
