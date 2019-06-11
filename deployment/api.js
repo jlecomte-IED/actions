@@ -1,5 +1,5 @@
 const {
-  owner, repo, ref, context, environment,
+  owner, repo, ref, context, stage,
 } = require('./tools')
 
 const kit = context.octokit()
@@ -11,7 +11,7 @@ const api = {
       owner,
       repo,
       ref,
-      environment,
+      environment: stage,
       ...add,
     }
     console.info('createDeploymentFromRef args:\n', args, '\n')

@@ -7,7 +7,7 @@ const {
 } = require('./tools')
 const api = require('./api')
 
-const environment = process.env.DEPLOY_ENVIRONMENT || 'production'
+const stage = process.env.STAGE || 'production'
 const deploymentState = process.env.DEPLOY_STATUS || 'pending'
 
 if (!['pending', 'in_progress'].includes(deploymentState)) {
@@ -23,12 +23,12 @@ module.exports = async () => {
       ref,
       tag: refName,
     }),
-    description: `${environment} deploy for tag ${refName}`,
+    description: `${stage} deploy for tag ${refName}`,
   })
 
   await context.writeJSON('deployment', deploy)
 
-  if (environment !== 'production' && deploymentState === 'pending') {
+  if (stage !== 'production' && deploymentState === 'pending') {
     process.exit(0)
   }
 
@@ -47,7 +47,7 @@ module.exports = async () => {
     '\n'
   );
 
-  if (environment !== 'production') {
+  if (stage !== 'production') {
     process.exit(0)
   }
 
