@@ -39,7 +39,7 @@ module.exports = async () => {
     text: `${owner}/${repo} has been successfully deployed to :twisted_rightwards_arrows: *${refName}* <https://github.com/${owner}/${repo}/commits/${refName}|see last merge>`,
   }
   console.info('Preparing slack message:\n', slackMessage, '\n')
-  context.slackMessage(slackMessage)
+  await context.slackMessage(slackMessage)
 
   console.info(
     'Written slack message:\n',
@@ -75,7 +75,7 @@ module.exports = async () => {
 [![Deploy to prod](${img})](${url})`,
   )
 
-  context.slackMessage({
+  await context.slackMessage({
     text: `[${owner}/${repo}:${refName}] Your release is ready to deploy!`,
     attachments: [
       {
