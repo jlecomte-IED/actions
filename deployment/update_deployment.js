@@ -11,7 +11,7 @@ module.exports = async () => {
 
   const deploymentEvent = await context.readJSON('deployment')
   console.info(deploymentEvent)
-  if (deploymentEvent.deployment) {
+  if (deploymentEvent.id) {
     const response = await api.createDeploymentStatus(deploymentEvent.id, process.argv[3])
   }
 }
