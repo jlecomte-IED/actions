@@ -33,15 +33,10 @@ module.exports = async () => {
 
   await api.createDeploymentStatus(deploy.id, deploymentState)
 
-  context.slackMessage(
-    {
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: `${owner}/${repo} has been successfully deployed to :twisted_rightwards_arrows: *${refName}* <https://github.com/${owner}/${repo}/commits/${refName}|see last merge>`
-        }
-    }
-  )
+  context.slackMessage({
+    type: 'mrkdwn',
+    text: `${owner}/${repo} has been successfully deployed to :twisted_rightwards_arrows: *${refName}* <https://github.com/${owner}/${repo}/commits/${refName}|see last merge>`,
+  })
 
   if (environment !== 'production') {
     process.exit(0)
