@@ -39,7 +39,9 @@ module.exports = async () => {
     text: `${owner}/${repo} has been successfully deployed to :twisted_rightwards_arrows: *${refName}* <https://github.com/${owner}/${repo}/commits/${refName}|see last merge>`,
   })
 
-  console.info(Buffer.toString(fs.readFileSync('./slack.json'), 'utf8'));
+  console.info(
+    fs.readFileSync('./slack.json', 'utf8')
+  );
 
   if (environment !== 'production') {
     process.exit(0)
