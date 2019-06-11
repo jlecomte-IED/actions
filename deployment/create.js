@@ -1,5 +1,6 @@
 const crypto = require('crypto')
 const { stringify } = require('querystring')
+const fs = require('fs')
 
 const {
   owner, repo, ref, refName, context,
@@ -37,6 +38,8 @@ module.exports = async () => {
     type: 'mrkdwn',
     text: `${owner}/${repo} has been successfully deployed to :twisted_rightwards_arrows: *${refName}* <https://github.com/${owner}/${repo}/commits/${refName}|see last merge>`,
   })
+
+  console.info(fs.readFileSync('./slack.json'));
 
   if (environment !== 'production') {
     process.exit(0)
