@@ -34,13 +34,17 @@ module.exports = async () => {
 
   await api.createDeploymentStatus(deploy.id, deploymentState)
 
-  context.slackMessage({
+  const slackMessage = {
     type: 'mrkdwn',
     text: `${owner}/${repo} has been successfully deployed to :twisted_rightwards_arrows: *${refName}* <https://github.com/${owner}/${repo}/commits/${refName}|see last merge>`,
-  })
+  }
+  console.info('Preparing slack message:\n', slackMessage, '\n')
+  context.slackMessage(slackMessage)
 
   console.info(
-    fs.readFileSync('./slack.json', 'utf8')
+    'Written slack message:\n',
+    fs.readFileSync('./slack.json', 'utf8'),
+    '\n'
   );
 
   if (environment !== 'production') {

@@ -14,13 +14,13 @@ const api = {
       environment,
       ...add,
     }
-    console.log('Deployment args', args)
+    console.info('createDeploymentFromRef args:\n', args, '\n')
     const { data: deployment } = await kit.repos.createDeployment(args)
 
     return deployment
   },
   createDeploymentStatus: async (deploy, state) => {
-    const { data: stats } = await kit.repos.createDeploymentStatus({
+    const args = {
       owner,
       repo,
       deployment_id: deploy,
@@ -28,7 +28,9 @@ const api = {
       headers: {
         accept: 'application/vnd.github.flash-preview+json',
       },
-    })
+    }
+    console.info('createDeploymentStatus args:\n', args, '\n')
+    const { data: stats } = await kit.repos.createDeploymentStatus(args)
 
     return stats
   },
