@@ -35,10 +35,10 @@ module.exports = async () => {
 
   context.slackMessage(
     {
-        "type": "section",
-        "text": {
-          "type": "mrkdwn",
-          "text": `${owner}/${repo} has been successfully deployed to :twisted_rightwards_arrows: *${refName}* <https://github.com/${owner}/${repo}/commits/${refName}|see last merge>`
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `${owner}/${repo} has been successfully deployed to :twisted_rightwards_arrows: *${refName}* <https://github.com/${owner}/${repo}/commits/${refName}|see last merge>`
         }
     }
   )
