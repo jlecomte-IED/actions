@@ -20,7 +20,7 @@ action "Create deployment dev" {
   uses = "inextensodigital/actions/deployment@master"
   args = "create"
   env = {
-    DEPLOY_ENVIRONMENT = "dev"
+    STAGE = "dev"
     DEPLOY_STATUS = "in_progress"
   }
   secrets = [
