@@ -1,4 +1,4 @@
-# make
+# zip
 
 ## Basic usage
 
