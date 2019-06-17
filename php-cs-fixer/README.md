@@ -5,7 +5,7 @@
 Runs `php-cs-fixer` to lint php files. Running it by default in `dry-run` mode with diff.
 
 ```
-action "Package" {
+action "Php cs fixer" {
   uses = "inextensodigital/actions/php-cs-fixer@master"
 }
 ```
@@ -15,7 +15,7 @@ action "Package" {
 For example, to effectively fix:
 
 ```
-action "Package" {
+action "Php cs fixer" {
   uses = "inextensodigital/actions/zip@master"
   run = ["php-cs-fixer", "fix"]
 }
