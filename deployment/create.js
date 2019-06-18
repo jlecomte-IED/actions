@@ -34,27 +34,24 @@ module.exports = async () => {
 
   await api.createDeploymentStatus(deploy.id, deploymentState)
 
-  const slackMessage = {
-    type: 'mrkdwn',
-    text: `${owner}/${repo} has been successfully deployed to :twisted_rightwards_arrows: *${refName}* <https://github.com/${owner}/${repo}/commits/${refName}|see last merge>`,
-  }
-  console.info('Preparing slack message:\n', slackMessage, '\n')
-  await context.slackMessage(slackMessage)
-
-  console.info(
-    'Written slack message:\n',
-    fs.readFileSync('./slack.json', 'utf8'),
-    '\n'
-  );
-
   if (stage !== 'production') {
+    const slackMessage = {
+      type: 'mrkdwn',
+      text: `${owner}/${repo} has been successfully deployed to :twisted_rightwards_arrows: *${refName}* <https://github.com/${owner}/${repo}/commits/${refName}|see last merge>`,
+    }
+    console.info('Preparing slack message:\n', slackMessage, '\n')
+    await context.slackMessage(slackMessage)
+  
+    console.info(
+      'Written slack message:\n',
+      fs.readFileSync('./slack.json', 'utf8'),
+      '\n'
+    );
     process.exit(0)
   }
 
   const sign = crypto.createSign('RSA-SHA256')
   sign.update(owner + repo + deploy.id + refName)
-
-
 
   const query = stringify({
     owner,
