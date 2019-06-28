@@ -34,7 +34,7 @@ functions:
     environment:
       GITHUB_CLIENT_ID: ${ssm:deployerGithubClientID}
       GITHUB_CLIENT_SECRET: ${ssm:deployerGithubClientSecret}
-      AUTHORIZED_TEAM: ied-publishers
+      AUTHORIZED_TEAM: 'ied publishers'
       PUBLIC_KEY: ${ssm:deployPublicKey}
       PRIVATE_KEY: ${ssm:deployPrivateKey}
     events:
