@@ -37,7 +37,7 @@ module.exports = async () => {
   if (stage !== 'production') {
     const slackMessage = {
       type: 'mrkdwn',
-      text: '*${owner}/${repo}:${refName}* has been successfully deployed to `${stage}`. <https://github.com/${owner}/${repo}/commits/${refName}|see last changes>',
+      text: '`${owner}/${repo}:${refName}` has been successfully deployed to *${stage}*. <https://github.com/${owner}/${repo}/commits/${refName}|see last changes>',
     }
     console.info('Preparing slack message:\n', slackMessage, '\n')
     await context.slackMessage(slackMessage)
