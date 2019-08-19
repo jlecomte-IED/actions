@@ -1,7 +1,8 @@
+#!/usr/bin/env node
+/* eslint-disable global-require, import/no-dynamic-require */
 const crypto = require('crypto')
 const stringify = require('querystring')
 const program = require('commander')
-const { parseArgv } = require('./utils')
 
 function generateButton(deployId, repository, ref) {
   const { PRIVATE_KEY } = process.env
@@ -33,20 +34,16 @@ function generateButton(deployId, repository, ref) {
   return `[![Deploy to prod](${img})](${url})`
 }
 
-program
-  .option('-d, --deploy-id <id>', 'deploy id')
-  .option(
-    '-g, --repository <github repository>',
-    'the github repository (owner/repository)',
-  )
-  .option('-r, --ref <github reference>', 'the github ref')
-
-module.exports = function() {
+program.command('generate-button <deployer-id>')
+program.action((cmd, deployerId) => {
   try {
-    const { deployId, repository, ref } = parseArgv(program)
-    generateButton(deployId, repository, ref)
+    const { GITHUB_REPOSITORY, GITHUB_REF } = process.env
+    generateButton(deployerId, GITHUB_REPOSITORY, GITHUB_REF)
   } catch (error) {
-    console.log(`${error} \n`)
     program.outputHelp()
   }
+})
+
+module.exports = function() {
+  program.parse(process.argv)
 }
