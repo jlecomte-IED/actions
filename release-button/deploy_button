@@ -4,8 +4,8 @@ const crypto = require('crypto')
 const stringify = require('querystring')
 const program = require('commander')
 
-function generateButton(deployId, repository, ref) {
-  const { PRIVATE_KEY } = process.env
+function generateButton(deployId) {
+  const { PRIVATE_KEY, GITHUB_REPOSITORY, GITHUB_REF } = process.env
 
   if (!PRIVATE_KEY) {
     console.log(
@@ -14,8 +14,8 @@ function generateButton(deployId, repository, ref) {
     process.exit(1)
   }
 
-  const [owner, repo] = repository.split('/')
-  const [, , refName] = ref.split('/')
+  const [owner, repo] = GITHUB_REPOSITORY.split('/')
+  const [, , refName] = GITHUB_REF.split('/')
 
   const sign = crypto.createSign('RSA-SHA256')
 
@@ -34,16 +34,12 @@ function generateButton(deployId, repository, ref) {
   return `[![Deploy to prod](${img})](${url})`
 }
 
-program.command('generate-button <deployer-id>')
-program.action((cmd, deployerId) => {
-  try {
-    const { GITHUB_REPOSITORY, GITHUB_REF } = process.env
-    generateButton(deployerId, GITHUB_REPOSITORY, GITHUB_REF)
-  } catch (error) {
-    program.outputHelp()
-  }
-})
+program.command('generate-button <deployer-id>').action(generateButton)
 
-module.exports = function() {
+try {
   program.parse(process.argv)
+} catch (err) {
+  console.log(`${err}\n`)
+  program.outputHelp()
+  process.exit(1)
 }

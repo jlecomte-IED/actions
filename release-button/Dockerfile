@@ -5,5 +5,4 @@ WORKDIR /app
 ADD . .
 RUN yarn
 
-
-ENTRYPOINT ["./deploy_button"]
+ENTRYPOINT ["/app/deploy_button"]
