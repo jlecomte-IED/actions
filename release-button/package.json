@@ -1,0 +1,17 @@
+{
+  "name": "release-button",
+  "version": "1.0.0",
+  "main": "lib/deploy_button.js",
+  "license": "MIT",
+  "dependencies": {
+    "@actions/core": "^1.0.0",
+    "commander": "^3.0.0"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^12.7.2",
+    "typescript": "^3.5.3"
+  }
+}
