@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* eslint-disable global-require, import/no-dynamic-require */
 const crypto = require('crypto')
-const stringify = require('querystring')
+const { stringify } = require('querystring')
 const program = require('commander')
 
 function generateButton(deployId) {
@@ -31,7 +31,7 @@ function generateButton(deployId) {
   const img =
     'https://img.shields.io/badge/Deploy%20to-Production-orange.svg?style=for-the-badge'
 
-  return `[![Deploy to prod](${img})](${url})`
+  console.log(`[![Deploy to prod](${img})](${url})`)
 }
 
 program.command('generate-button <deployer-id>').action(generateButton)
@@ -39,7 +39,9 @@ program.command('generate-button <deployer-id>').action(generateButton)
 try {
   program.parse(process.argv)
 } catch (err) {
-  console.log(`${err}\n`)
-  program.outputHelp()
+  console.error(`${err}\n`)
+  program.outputHelp(help => {
+    console.error(help)
+  })
   process.exit(1)
 }
