@@ -18,7 +18,7 @@ const querystring_1 = require("querystring");
 function generateButton(deployId) {
     const { PRIVATE_KEY, GITHUB_REPOSITORY, GITHUB_REF } = process.env;
     if (!PRIVATE_KEY || !GITHUB_REPOSITORY || !GITHUB_REF) {
-        console.log('Environment variable PRIVATE_KEY, GITHUB_REPOSITORY and GITHUB_REF are required.');
+        console.error('Environment variable PRIVATE_KEY, GITHUB_REPOSITORY and GITHUB_REF are required.');
         process.exit(1);
         return;
     }
@@ -34,7 +34,7 @@ function generateButton(deployId) {
     });
     const url = `https://auto-deploy.inextenso.io/deploy?${query}`;
     const img = 'https://img.shields.io/badge/Deploy%20to-Production-orange.svg?style=for-the-badge';
-    console.log(`[![Deploy to prod](${img})](${url})`);
+    process.stdout.write(`[![Deploy to prod](${img})](${url})`);
 }
 const action = core.getInput('action', { required: true });
 switch (action) {
