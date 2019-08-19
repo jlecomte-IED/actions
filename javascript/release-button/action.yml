@@ -1,0 +1,12 @@
+name: 'Generate deploy button'
+description: 'Generate the deploy button'
+author: 'Vibou'
+inputs:
+  action:
+    description: 'The name of the action'
+    default: 'generate-button'
+  deploy-id:
+    description: 'the deploy id'
+runs:
+  using: 'node12'
+  main: './lib/deploy_button.js'
