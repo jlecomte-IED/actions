@@ -35,4 +35,4 @@ jobs:
           yarn
           git add node_modules
           git commit -m "publishing v1 of release-button"
-          git push --set-upstream origin v1-release
+          git push --force --set-upstream origin v1-release
