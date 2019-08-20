@@ -4,7 +4,7 @@ on:
     branches:
       - master
     paths:
-      - .github/workflows/publish-release-button.yml,
+      - .github/workflows/publish-release-button.yml
       - javascript/release-button/*
 
 jobs:
