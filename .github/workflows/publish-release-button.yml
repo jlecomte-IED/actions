@@ -1,0 +1,38 @@
+name: publish release-button
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - .github/workflows/publish-release-button.yml,
+      - javascript/release-button/*
+
+jobs:
+  get_info:
+    runs-on: ubuntu-latest
+    name: publish actions
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@master
+
+      - name: Build release-button
+        working-directory: './javascript/release-button'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NAME: ${{github.event.pusher.name}}
+          EMAIL: ${{github.event.pusher.email}}
+        run: |
+          echo $GITHUB_ACTOR
+          git config --global user.name "$GITHUB_ACTOR"
+          git checkout -b v1-release
+          git config user.name "$NAME"
+          git config user.email "$EMAIL"
+          git remote set-url origin https://${NAME}:${GITHUB_TOKEN}@github.com/$GITHUB_REPOSITORY
+          cat ../../.gitignore | sed 's/^node_modules$/!node_modules/' > .gitignore
+          mv .gitignore ../../.gitignore
+          rm -Rf node_modules
+          yarn
+          git add node_modules
+          git commit -m "publishing v1 of release-button"
+          git push --set-upstream origin v1-release
