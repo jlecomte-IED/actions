@@ -1,15 +1,11 @@
 name: publish release-button
-# on:
-#   push:
-#     branches:
-#       - master
-# on:
-#   push:
-#     paths:
-# - .github/workflows/publish-release-button,
-# - javascript/release-button
-
-on: push
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - .github/workflows/publish-release-button.yml,
+      - javascript/release-button/*
 
 jobs:
   get_info:
