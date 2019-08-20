@@ -8,10 +8,17 @@
     "commander": "^3.0.0"
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "start": "yarn build && node lib/deploy_button.js"
   },
   "devDependencies": {
     "@types/node": "^12.7.2",
+    "husky": "^3.0.4",
     "typescript": "^3.5.3"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "yarn build && git add lib"
+    }
   }
 }
