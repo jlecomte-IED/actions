@@ -32,17 +32,14 @@ function generateButton(deployId: string) {
   const img =
     'https://img.shields.io/badge/Deploy%20to-Production-orange.svg?style=for-the-badge'
 
+  core.setOutput('release-button', `[![Deploy to prod](${img})](${url})`)
   process.stdout.write(`[![Deploy to prod](${img})](${url})`)
 }
 
-const action = core.getInput('action', { required: true })
-
-switch (action) {
-  case 'generate-button':
-    const deployId = core.getInput('deploy-id', { required: true })
-    generateButton(deployId)
-    break
-
-  default:
-    process.exit(1)
+try {
+  const deployId = core.getInput('deploy-id', { required: true })
+  generateButton(deployId)
+} catch (err) {
+  core.setFailed(err)
+  process.exit(1)
 }
