@@ -37,26 +37,11 @@ function generateButton(deployId) {
     core.setOutput('release-button', `[![Deploy to prod](${img})](${url})`);
     process.stdout.write(`[![Deploy to prod](${img})](${url})`);
 }
-const actionName = core.getInput('action', { required: true });
-const actions = new Map();
-actions.set('generate-button', () => {
+try {
     const deployId = core.getInput('deploy-id', { required: true });
     generateButton(deployId);
-});
-const action = actions.get(actionName);
-if (action === undefined) {
-    let availableActions = Array.from(actions.keys()).reduce((prev, curr) => {
-        return prev === '' ? curr : `${prev}, ${curr}`;
-    }, '');
-    core.setFailed(`Unknown action ${actionName}. Please give one of these actions: ${availableActions}}`);
-    process.exit(1);
 }
-else {
-    try {
-        action();
-    }
-    catch (err) {
-        core.setFailed(err);
-        process.exit(1);
-    }
+catch (err) {
+    core.setFailed(err);
+    process.exit(1);
 }
