@@ -2,10 +2,7 @@ name: 'Generate deploy button'
 description: 'Generate the deploy button'
 author: 'Vibou'
 inputs:
-  action:
-    description: 'The name of the action'
-    default: 'generate-button'
-  deploy-id:
+  deploy_id:
     description: 'the deploy id'
 outputs:
   release-button:
