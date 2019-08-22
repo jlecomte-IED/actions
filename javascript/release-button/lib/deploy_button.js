@@ -25,6 +25,7 @@ function generateButton(deployId) {
     const [owner, repo] = GITHUB_REPOSITORY.split('/');
     const [, , refName] = GITHUB_REF.split('/');
     const sign = crypto_1.default.createSign('RSA-SHA256');
+    sign.update(owner + repo + deployId + refName);
     const query = querystring_1.stringify({
         owner,
         repo,
