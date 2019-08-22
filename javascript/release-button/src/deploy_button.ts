@@ -19,6 +19,7 @@ function generateButton(deployId: string) {
   const [, , refName] = GITHUB_REF.split('/')
 
   const sign = crypto.createSign('RSA-SHA256')
+  sign.update(owner + repo + deployId + refName)
 
   const query = stringify({
     owner,
@@ -35,6 +36,7 @@ function generateButton(deployId: string) {
   core.setOutput('release-button', `[![Deploy to prod](${img})](${url})`)
   process.stdout.write(`[![Deploy to prod](${img})](${url})`)
 }
+
 try {
   const deployId = core.getInput('deploy_id', { required: true })
   generateButton(deployId)
