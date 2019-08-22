@@ -38,7 +38,7 @@ function generateButton(deployId) {
     process.stdout.write(`[![Deploy to prod](${img})](${url})`);
 }
 try {
-    const deployId = core.getInput('deploy-id', { required: true });
+    const deployId = core.getInput('deploy_id', { required: true });
     generateButton(deployId);
 }
 catch (err) {
