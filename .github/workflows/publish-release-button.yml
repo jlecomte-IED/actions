@@ -33,6 +33,6 @@ jobs:
           mv .gitignore ../../.gitignore
           rm -Rf node_modules
           yarn
-          git add node_modules
+          git add node_modules . ../../.gitignore
           git commit -m "publishing v1 of release-button"
           git push --force --set-upstream origin v1-release
