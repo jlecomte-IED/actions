@@ -36,3 +36,4 @@ jobs:
           git add node_modules . ../../.gitignore
           git commit -m "publishing v1 of release-button"
           git push --force --set-upstream origin v1-release
+
