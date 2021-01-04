@@ -4,6 +4,16 @@ author: 'Vibou'
 inputs:
   deploy_id:
     description: 'the deploy id'
+    required: true
+  deploy_env:
+    description: 'Which environment is targeted for the deployment'
+    required: false
+    default: 'prod'
+  deploy_type:
+    description: 'code or model'
+    required: false
+    default: 'code'
+
 outputs:
   release-button:
     description: The resulting deploy button markdown
