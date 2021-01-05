@@ -9,8 +9,8 @@ inputs:
     description: 'Which environment is targeted for the deployment'
     required: false
     default: 'prod'
-  deploy_type:
-    description: 'code or model'
+  deploy_model:
+    description: 'model or code'
     required: false
     default: 'code'
 

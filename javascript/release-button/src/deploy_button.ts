@@ -4,12 +4,7 @@ import * as core from '@actions/core'
 import crypto from 'crypto'
 import { stringify } from 'querystring'
 
-enum deployType {
-  code = 'code',
-  model = 'model',
-}
-
-enum deployEnv {
+enum DeployEnv {
   dev = 'dev',
   preprod = 'preprod',
   prod = 'prod',
@@ -17,9 +12,16 @@ enum deployEnv {
 
 function generateButton(
   deployId: string,
-  deploy_type: deployType,
-  deploy_env: deployEnv,
+  deployType: string,
+  deployEnv: string,
 ) {
+  if (!(deployEnv in DeployEnv)) {
+    console.error(
+      'deployEnv variable should be equal to "dev", "preprod" or "prod" ',
+    )
+    process.exit(1)
+  }
+
   const { PRIVATE_KEY, GITHUB_REPOSITORY, GITHUB_REF } = process.env
 
   if (!PRIVATE_KEY || !GITHUB_REPOSITORY || !GITHUB_REF) {
@@ -46,17 +48,25 @@ function generateButton(
 
   const url = `https://auto-deploy.inextenso.io/deploy?${query}`
 
-  const button = {
-    dev: { name: 'Dev', color: 'blue' },
-    preprod: { name: 'Preprod', color: 'yellow' },
-    prod: { name: 'Production', color: 'orange' },
+  interface IbuttonStyle {
+    name: string
+    color: string
+  }
+
+  let buttonStyle: IbuttonStyle = { name: 'Production', color: 'orange' }
+
+  switch (deployEnv) {
+    case DeployEnv.dev:
+      buttonStyle = { name: 'Dev', color: 'blue' }
+    case DeployEnv.preprod:
+      buttonStyle = { name: 'Preprod', color: 'yellow' }
+    case DeployEnv.prod:
+      buttonStyle = { name: 'Production', color: 'orange' }
   }
 
   const img = `https://img.shields.io/badge/Deploy${
-    deploy_type === 'model' ? '%20model' : ''
-  }%20to-${button[deploy_env]['name']}-${
-    button[deploy_env]['color']
-  }.svg?style=for-the-badge`
+    deployType ? '%20model' : ''
+  }%20to-${buttonStyle.name}-${buttonStyle.color}.svg?style=for-the-badge`
 
   core.setOutput('release-button', `[![Deploy to prod](${img})](${url})`)
   process.stdout.write(`[![Deploy to prod](${img})](${url})`)
@@ -64,9 +74,9 @@ function generateButton(
 
 try {
   const deployId = core.getInput('deploy_id')
-  const deployType = core.getInput('deploy_type')
+  const deployModel = core.getInput('deploy_model')
   const deployEnv = core.getInput('deploy_env')
-  generateButton(deployId, deployType, deployEnv)
+  generateButton(deployId, deployModel, deployEnv)
 } catch (err) {
   core.setFailed(err)
   process.exit(1)
