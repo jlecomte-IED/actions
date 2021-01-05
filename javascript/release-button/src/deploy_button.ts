@@ -16,8 +16,6 @@ function generateButton(
   deployEnv: string,
 ) {
   if (!(deployEnv in DeployEnv)) {
-    console.log(deployEnv)
-
     console.error(
       'deployEnv variable should be equal to "dev", "preprod" or "prod" ',
     )

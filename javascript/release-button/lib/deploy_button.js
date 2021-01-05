@@ -23,7 +23,6 @@ var DeployEnv;
 })(DeployEnv || (DeployEnv = {}));
 function generateButton(deployId, deployType, deployEnv) {
     if (!(deployEnv in DeployEnv)) {
-        console.log(deployEnv);
         console.error('deployEnv variable should be equal to "dev", "preprod" or "prod" ');
         process.exit(1);
     }
