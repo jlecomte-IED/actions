@@ -65,10 +65,9 @@ function generateButton(
       buttonStyle = { name: 'Production', color: 'orange' }
       break
   }
+  const title = encodeURI(`Deploy ${deployType} to`.replace(/\s+/g, ' '))
 
-  const img = `https://img.shields.io/badge/Deploy${
-    deployType === 'model' ? '%20model' : ''
-  }%20to-${buttonStyle.name}-${buttonStyle.color}.svg?style=for-the-badge`
+  const img = `https://img.shields.io/badge/${title}-${buttonStyle.name}-${buttonStyle.color}.svg?style=for-the-badge`
 
   core.setOutput('release-button', `[![Deploy to prod](${img})](${url})`)
   process.stdout.write(`[![Deploy to prod](${img})](${url})`)
