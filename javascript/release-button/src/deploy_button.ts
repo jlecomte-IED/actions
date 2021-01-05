@@ -16,6 +16,8 @@ function generateButton(
   deployEnv: string,
 ) {
   if (!(deployEnv in DeployEnv)) {
+    console.log(deployEnv)
+
     console.error(
       'deployEnv variable should be equal to "dev", "preprod" or "prod" ',
     )
@@ -29,11 +31,10 @@ function generateButton(
       'Environment variable PRIVATE_KEY, GITHUB_REPOSITORY and GITHUB_REF are required.',
     )
     process.exit(1)
-    return
   }
 
-  const [owner, repo] = GITHUB_REPOSITORY.split('/')
-  const [, , refName] = GITHUB_REF.split('/')
+  const [owner, repo] = GITHUB_REPOSITORY!.split('/')
+  const [, , refName] = GITHUB_REF!.split('/')
 
   const sign = crypto.createSign('RSA-SHA256')
   sign.update(owner + repo + deployId + refName)
@@ -43,7 +44,7 @@ function generateButton(
     repo,
     deploy: deployId,
     tag: refName,
-    sign: sign.sign(PRIVATE_KEY, 'hex'),
+    sign: sign.sign(PRIVATE_KEY!, 'hex'),
   })
 
   const url = `https://auto-deploy.inextenso.io/deploy?${query}`
@@ -58,14 +59,17 @@ function generateButton(
   switch (deployEnv) {
     case DeployEnv.dev:
       buttonStyle = { name: 'Dev', color: 'blue' }
+      break
     case DeployEnv.preprod:
       buttonStyle = { name: 'Preprod', color: 'yellow' }
+      break
     case DeployEnv.prod:
       buttonStyle = { name: 'Production', color: 'orange' }
+      break
   }
 
   const img = `https://img.shields.io/badge/Deploy${
-    deployType ? '%20model' : ''
+    deployType === 'model' ? '%20model' : ''
   }%20to-${buttonStyle.name}-${buttonStyle.color}.svg?style=for-the-badge`
 
   core.setOutput('release-button', `[![Deploy to prod](${img})](${url})`)

@@ -23,6 +23,7 @@ var DeployEnv;
 })(DeployEnv || (DeployEnv = {}));
 function generateButton(deployId, deployType, deployEnv) {
     if (!(deployEnv in DeployEnv)) {
+        console.log(deployEnv);
         console.error('deployEnv variable should be equal to "dev", "preprod" or "prod" ');
         process.exit(1);
     }
@@ -30,7 +31,6 @@ function generateButton(deployId, deployType, deployEnv) {
     if (!PRIVATE_KEY || !GITHUB_REPOSITORY || !GITHUB_REF) {
         console.error('Environment variable PRIVATE_KEY, GITHUB_REPOSITORY and GITHUB_REF are required.');
         process.exit(1);
-        return;
     }
     const [owner, repo] = GITHUB_REPOSITORY.split('/');
     const [, , refName] = GITHUB_REF.split('/');
@@ -48,12 +48,15 @@ function generateButton(deployId, deployType, deployEnv) {
     switch (deployEnv) {
         case DeployEnv.dev:
             buttonStyle = { name: 'Dev', color: 'blue' };
+            break;
         case DeployEnv.preprod:
             buttonStyle = { name: 'Preprod', color: 'yellow' };
+            break;
         case DeployEnv.prod:
             buttonStyle = { name: 'Production', color: 'orange' };
+            break;
     }
-    const img = `https://img.shields.io/badge/Deploy${deployType ? '%20model' : ''}%20to-${buttonStyle.name}-${buttonStyle.color}.svg?style=for-the-badge`;
+    const img = `https://img.shields.io/badge/Deploy${deployType === 'model' ? '%20model' : ''}%20to-${buttonStyle.name}-${buttonStyle.color}.svg?style=for-the-badge`;
     core.setOutput('release-button', `[![Deploy to prod](${img})](${url})`);
     process.stdout.write(`[![Deploy to prod](${img})](${url})`);
 }
