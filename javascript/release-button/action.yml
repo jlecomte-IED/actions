@@ -10,9 +10,9 @@ inputs:
     required: false
     default: 'prod'
   deploy_type:
-    description: 'model or code'
+    description: 'model if deploying AI model'
     required: false
-    default: 'code'
+    default: ''
 
 outputs:
   release-button:
