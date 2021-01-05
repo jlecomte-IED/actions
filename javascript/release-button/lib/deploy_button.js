@@ -61,9 +61,9 @@ function generateButton(deployId, deployType, deployEnv) {
 }
 try {
     const deployId = core.getInput('deploy_id');
-    const deployModel = core.getInput('deploy_model');
+    const deployType = core.getInput('deploy_type');
     const deployEnv = core.getInput('deploy_env');
-    generateButton(deployId, deployModel, deployEnv);
+    generateButton(deployId, deployType, deployEnv);
 }
 catch (err) {
     core.setFailed(err);
