@@ -9,7 +9,7 @@ LABEL "repository"="http://github.com/inextensodigital/actions"
 LABEL "homepage"="http://github.com/inextensodigital"
 LABEL "maintainer"="IED <contact@inextenso.digital>"
 
-RUN wget https://github.com/FriendsOfPHP/PHP-CS-Fixer/releases/download/v2.16.4/php-cs-fixer.phar -O /usr/local/bin/php-cs-fixer \
+RUN wget https://github.com/FriendsOfPHP/PHP-CS-Fixer/releases/download/v2.18.0/php-cs-fixer.phar -O /usr/local/bin/php-cs-fixer \
     && chmod a+x /usr/local/bin/php-cs-fixer
 
 ENTRYPOINT ["php-cs-fixer", "fix", "--dry-run", "--diff"]
