@@ -7,6 +7,6 @@
     "start": "env PROJECT_ID=document-manager GITHUB_EVENT_PATH=./mocks/releases.json node release"
   },
   "dependencies": {
-    "aws-sdk": "^2.415.0"
+    "aws-sdk": "^2.814.0"
   }
 }
