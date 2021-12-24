@@ -1,0 +1,24 @@
+{
+  "name": "github-review",
+  "version": "1.0.0",
+  "description": "github action for org review",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/index.js",
+    "build": "ncc build src/index.js --minify"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@actions/artifact": "^0.1.0",
+    "@actions/core": "^1.6.0",
+    "@actions/github": "^2.2.0",
+    "@octokit/graphql": "^4.3.1",
+    "@octokit/rest": "^17.0.0",
+    "csv-to-markdown-table": "1.1.0",
+    "csv2md": "1.0.1",
+    "date-fns": "^2.27.0"
+  }
+}
