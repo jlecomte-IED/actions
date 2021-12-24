@@ -14,20 +14,13 @@ Github action for github membership and teams review.
         ## If you want the output posted on an issue in the repo running the action. 
         ## postToIssue is optional (if not set, the default value is false)
         postToIssue: true
-        ## Custom title fro output issue. issueTitle is optional
+        ## Custom title of output issue. issueTitle is optional
         issueTitle: "Insert issue title here"
 ```
 
 ## Example workflows
 
-
 ### Review on push (good for testing)
-
-The action in the following workflow is configured to:
-
-- Work only on a single `organization`
-- Publish results also to an `issue`
-- Add custom title to issue
 
 ```yml
 on: push
@@ -48,11 +41,6 @@ jobs:
 ```
 
 ### Review on a schedule (cron)
-
-The action in the following workflow is configured to:
-
-- Work only on a single `organization`
-- Publish results also to an `issue`
 
 ```yml
 on:
