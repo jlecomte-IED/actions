@@ -96137,6 +96137,8 @@ class CollectOrgData {
       body: body
     });
 
+    let issue_param;
+
     issue_param.push({
       owner: owner,
       repo: repo,
@@ -96201,7 +96203,6 @@ class CollectOrgData {
     const { organization: data } = await this.graphqlClient(
       format(orgPullRequestQuery, queryBody)
     );
-    core.info('ici');
     core.info(data);
 
     return data;
