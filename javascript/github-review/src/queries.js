@@ -136,8 +136,8 @@ const queries = {
     }
   }`,
   orgPullRequestQuery: `
-  query($query: String!){
-    search(query:$query, type: ISSUE, last: 100)   
+  {
+    search(query: %s, type: ISSUE, last: 100)   
     {
       issueCount
     }

@@ -4,7 +4,7 @@ const github = require("@actions/github");
 const { graphql } = require("@octokit/graphql");
 const csvToMarkdown = require("csv-to-markdown-table");
 const fs = require("fs");
-const { promisify } = require("util");
+const { promisify,format } = require("util");
 const dateFormat = require("date-fns");
 
 const { JSONtoCSV } = require("./utils");
@@ -12,12 +12,13 @@ const {
   orgTeamsAndReposAndMembersQuery,
   orgPullRequestQuery,
 } = require("./queries");
+const { is } = require("date-fns/locale");
 
 const writeFileAsync = promisify(fs.writeFile);
 
 const DEFAULT_ISSUE_TITLE = "Github Organization Review";
 const ARTIFACT_FILE_NAME = "review-data";
-const DATA_FOLDER= "./data"
+const DATA_FOLDER = "./data"
 
 const ERROR_MESSAGE_TOKEN_UNAUTHORIZED =
   "Resource protected by organization SAML enforcement. You must grant your personal token access to this organization.";
@@ -25,20 +26,21 @@ const ERROR_MESSAGE_TOKEN_UNAUTHORIZED =
 !fs.existsSync(DATA_FOLDER) && fs.mkdirSync(DATA_FOLDER);
 
 class CollectOrgData {
-  constructor(token,organization, options){
+  constructor(token, organization, options) {
     this.validateInput(organization, token);
 
     this.organizations = [{ login: organization }];
     this.options = options
     this.result = {};
-    this.normalizedData = [];
+    this.orgNormalizedData = [];
+    this.pullRequestData = [];
     this.lastTrackedTeam = null;
 
     this.initiateGraphQLClient(token);
     this.initiateOctokit(token);
   }
 
-  validateInput(organization,token) {
+  validateInput(organization, token) {
     if (!organization || !token) {
       core.setFailed(
         "The organization or token parameter are not defined."
@@ -82,73 +84,49 @@ class CollectOrgData {
     this.octokit = new github.GitHub(token);
   }
 
-  async postResultsToIssue(csv) {
-    if (!this.options.postToIssue) {
-      return core.info(
-        `Skipping posting result to issue ${this.options.repository}.`
-      );
-    }
-
+  async createIssue(body) {
+    core.info(`Creating Issue ...`);
     const [owner, repo] = this.options.repository.split("/");
-
-    let body = await csvToMarkdown(csv, ",", true);
-    
-    core.info(`Posting result to issue ${this.options.repository}.`);
     const { data: issue_response } = await this.octokit.issues.create({
       owner,
       repo,
-      title: `[Github-Actions] ${dateFormat.format(new Date(),'MM/yyyy')} ${this.options.issueTitle}`,
+      title: `[Github-Actions] ${dateFormat.format(new Date(), 'MM/yyyy')} ${this.options.issueTitle}`,
       body: body
     });
 
-    core.info(issue_response);
-    await this.octokit.issues.update({
+    issue_param.push({
+      owner: owner,
+      repo: repo,
+      issue_number: issue_response.number,
+    });
+
+    return issue_param;
+  }
+
+  async postCommentToIssue(owner, repo, issue_number, body) {
+    core.info(`Posting Comment ...`);
+    await this.octokit.issues.createComment({
       owner,
       repo,
-      issue_number: issue_response.number,
-      state: "closed"
+      issue_number,
+      body
     });
   }
 
-  // async requestOrgTeamsRepos(
-  //   organization,
-  //   teamsCursor = null,
-  //   repositoriesCursor = null
-  // ) {
-  //   const { organization: data } = await this.graphqlClient(
-  //     orgTeamsReposQuery,
-  //     {
-  //       organization,
-  //       teamsCursor,
-  //       repositoriesCursor
-  //     }
-  //   );
-
-  //   return data;
-  // }
-
-  // async requestOrgTeamsMembers(
-  //   organization,
-  //   teamsCursor = null,
-  //   membersCursor = null
-  // ) {
-  //   const { organization: data } = await this.graphqlClient(
-  //     orgTeamsReposQuery,
-  //     {
-  //       organization,
-  //       teamsCursor,
-  //       membersCursor
-  //     }
-  //   );
-
-  //   return data;
-  // }
+  async closeIssue(owner, repo, issue_number) {
+    await this.octokit.issues.update({
+      owner,
+      repo,
+      issue_number,
+      state: "closed"
+    });
+  }
 
   async requestOrgTeamsAndReposAndMembers(
     organization,
     teamsCursor = null,
     repositoriesCursor = null,
-    membersCursor = null,
+    membersCursor = null
   ) {
     const { organization: data } = await this.graphqlClient(
       orgTeamsAndReposAndMembersQuery,
@@ -168,25 +146,31 @@ class CollectOrgData {
     isClosed,
     creationPeriod
   ) {
-    let query = `org:${organization} is:pr archived:false created:${creationPeriod} ${isClosed}`;
+    let queryBody = `"org:${organization} is:pr archived:false created:${creationPeriod}"`;
+
+    if (isClosed != null) {
+      queryBody = queryBody + " " + isClosed;
+    }
+
+    core.info(queryBody);
     core.info(organization);
+    
     const { organization: data } = await this.graphqlClient(
-      orgPullRequestQuery,
-      {
-        query
-      }
+      format(orgPullRequestQuery,queryBody)
     );
+    core.info('ici');
+    core.info(data);
 
     return data;
   }
 
-  async collectTeamsData(organization, teamsCursor, repositoriesCursor, membersCursor){
+  async collectTeamsData(organization, teamsCursor, repositoriesCursor, membersCursor) {
     let data;
     try {
       data = await this.requestOrgTeamsAndReposAndMembers(
-        organization, 
+        organization,
         teamsCursor,
-        repositoriesCursor, 
+        repositoriesCursor,
         membersCursor
       );
     } catch (error) {
@@ -204,10 +188,10 @@ class CollectOrgData {
         );
         return;
       }
-      
+
       const teamsPage = data.teams;
       const currentTeam = teamsPage.edges[0];
-      
+
       const repositoriesPage = currentTeam.node.repositories.edges;
       const repositoriesHasNextPage = currentTeam.node.repositories.pageInfo.hasNextPage;
       const lastRepoCursor = currentTeam.node.repositories.pageInfo.endCursor;
@@ -217,7 +201,7 @@ class CollectOrgData {
       const lastMemberCursor = currentTeam.node.members.pageInfo.endCursor;
       let result;
 
-      if (!this.result[organization]){
+      if (!this.result[organization]) {
         result = this.result[organization] = data;
         this.lastTrackedTeam = teamsCursor;
       } else {
@@ -226,7 +210,7 @@ class CollectOrgData {
         const teamsInResult = result.teams.edges.length;
         const lastTeamsInResult = result.teams.edges[teamsInResult - 1];
 
-        if(result && currentTeam.node.name === lastTeamsInResult.node.name) {
+        if (result && currentTeam.node.name === lastTeamsInResult.node.name) {
           lastTeamsInResult.node.repositories.edges = [
             ...lastTeamsInResult.node.repositories.edges,
             ...repositoriesPage
@@ -244,15 +228,14 @@ class CollectOrgData {
           ];
         }
       }
-      
+
       this.result[organization] = result;
-      
-      if(repositoriesHasNextPage === true){
+
+      if (repositoriesHasNextPage === true) {
         let teamsStartCursor = this.lastTrackedTeam;
         core.info(
-          `⏳ Still scanning ${currentTeam.node.name} repositories, total repositories count: ${
-            result.teams.edges[result.teams.edges.length - 1]
-              .node.repositories.totalCount
+          `⏳ Still scanning ${currentTeam.node.name} repositories, total repositories count: ${result.teams.edges[result.teams.edges.length - 1]
+            .node.repositories.totalCount
           }`
         );
         await this.collectTeamsData(
@@ -264,13 +247,12 @@ class CollectOrgData {
         return;
       }
 
-      if(membersHasNextPage === true){
+      if (membersHasNextPage === true) {
         let teamsStartCursor = this.lastTrackedTeam;
         core.info(
-          `⏳ Still scanning ${currentTeam.node.name} members, total members count: 
-          ${result.teams.edges[result.teams.edges.length - 1] 
-              .node.members.totalCount }
-          `
+          `⏳ Still scanning ${currentTeam.node.name} members, total members count: ${result.teams.edges[result.teams.edges.length - 1]
+            .node.members.totalCount
+          }`
         );
         await this.collectTeamsData(
           organization,
@@ -282,7 +264,7 @@ class CollectOrgData {
       }
 
       core.info(`✅ Finished scanning ${currentTeam.node.name}`);
-  
+
       if (teamsPage.pageInfo.hasNextPage === true) {
         await this.collectTeamsData(
           organization,
@@ -295,14 +277,14 @@ class CollectOrgData {
 
       return this.result[organization];
     }
-    
+
   }
 
-  async collectPullRequestData(organization,isClosed = null,creationPeriod = null){
+  async getPullRequestCount(organization, isClosed, creationPeriod) {
     let data;
     try {
       data = await this.requestOrgPullRequest(
-        organization, 
+        organization,
         isClosed,
         creationPeriod
       );
@@ -326,39 +308,48 @@ class CollectOrgData {
     }
   }
 
-  async getPullRequestInfo(organization){
+  async collectPullRequestData(organization) {
     let nbPullResquestCreated;
     let nbPullResquestClosed;
     let date = new Date();
 
     let firstDayString = dateFormat.format(new Date(date.getFullYear(), date.getMonth(), 1), 'yyyy-MM-dd');
-    let lastDayString = dateFormat.format(new Date(date.getFullYear(), date.getMonth() + 1 , 0) ,'yyyy-MM-dd');
+    let lastDayString = dateFormat.format(new Date(date.getFullYear(), date.getMonth() + 1, 0), 'yyyy-MM-dd');
     let creationPeriod = firstDayString + ".." + lastDayString;
 
-    nbPullResquestCreated = await this.collectPullRequestData(
+    nbPullResquestCreated = await this.getPullRequestCount(
       organization,
       null,
       creationPeriod
     );
 
-    nbPullResquestClosed = await this.collectPullRequestData(
+    nbPullResquestClosed = await this.getPullRequestCount(
       organization,
       "is:closed",
       creationPeriod
     );
 
     core.info(`Organization PR created between ${firstDayString} and ${lastDayString} = ${nbPullResquestCreated}`);
-    core.info(`Organization PR created between ${firstDayString} and ${lastDayString} = ${nbPullResquestClosed}`);
+    core.info(`Organization PR Closed between ${firstDayString} and ${lastDayString} = ${nbPullResquestClosed}`);
+
+    this.pullRequestData.push({
+      beginDate: firstDayString,
+      endDate: lastDayString,
+      prCreated: nbPullResquestCreated,
+      prClosed: nbPullResquestClosed
+    })
+
+    return this.pullRequestData;
 
   }
 
-  async startOrgReview(){
+  async startOrgReview() {
     try {
-      for (const {login} of this.organizations) {
+      for (const { login } of this.organizations) {
         core.startGroup(`🔍 Start collecting for organization ${login}.`);
         this.result[login] = null;
-        await this.collectTeamsData(login);
-        //await this.getPullRequestInfo(login);
+        //await this.collectTeamsData(login);
+        await this.collectPullRequestData(login);
 
         if (this.result[login]) {
           core.info(
@@ -388,7 +379,7 @@ class CollectOrgData {
         }
         team.node.repositories.edges.forEach(repository => {
           team.node.members.edges.forEach(member => {
-            this.normalizedData.push({
+            this.orgNormalizedData.push({
               organization,
               team: team.node.name,
               repository: repository.node.nameWithOwner,
@@ -403,7 +394,7 @@ class CollectOrgData {
 
   async endOrgReview() {
     await this.normalizeResult();
-    const json = this.normalizedData;
+    const json = this.orgNormalizedData;
 
     if (!json.length) {
       return core.setFailed(`⚠️  No data collected. Stopping action`);
@@ -418,9 +409,55 @@ class CollectOrgData {
     await writeFileAsync(`${DATA_FOLDER}/${ARTIFACT_FILE_NAME}.csv`, csv);
 
     await this.createandUploadArtifacts();
-    await this.postResultsToIssue(csv);
+
+    /***** POSTING TO ISSUE ****/
+
+    if (!this.options.postToIssue) {
+      return core.info(
+        `Skipping posting result to issue ${this.options.repository}.`
+      );
+    }
+
+    const issue_param = await this.createIssue();
+    core.info(`Posting result to issue ${this.options.repository}.`);
+
+    // Pull request review comment
+
+    let pull_request_comment = `
+    
+    # Pull Request Info
+
+    ### Pull Request Created: 
+    ### Pull Request Closed: 
+    `
+
+
+    await this.postCommentToIssue(
+      issue_param.owner,
+      issue_param.repo,
+      issue_param.issue_number,
+      body
+    );
+
+    // Membership review comment
+
+    let review_result =
+      `
+    # Members review
+    ${csvToMarkdown(csv)}
+    `;
+
+    await this.postCommentToIssue(
+      issue_param.owner,
+      issue_param.repo,
+      issue_param.issue_number,
+      review_result
+    );
+
+
+
     process.exit();
-  }  
+  }
 
 }
 
@@ -430,7 +467,7 @@ const main = async () => {
   const organization =
     core.getInput("organization") || process.env.ORGANIZATION;
 
-  const Collector = new CollectOrgData(token, organization,{
+  const Collector = new CollectOrgData(token, organization, {
     repository: process.env.GITHUB_REPOSITORY,
     postToIssue: core.getInput("postToIssue") || process.env.ISSUE,
     issueTitle: core.getInput("issueTitle") || DEFAULT_ISSUE_TITLE
