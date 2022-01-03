@@ -34,6 +34,7 @@ class CollectOrgData {
     this.result = {};
     this.orgNormalizedData = [];
     this.pullRequestData = [];
+    this.issue_param = [];
     this.lastTrackedTeam = null;
 
     this.initiateGraphQLClient(token);
@@ -90,15 +91,11 @@ class CollectOrgData {
       body: body
     });
 
-    let issue_param;
-
-    issue_param.push({
+    this.issue_param.push({
       owner: owner,
       repo: repo,
       issue_number: issue_response.number,
     });
-
-    return issue_param;
   }
 
   async postCommentToIssue(owner, repo, issue_number, body) {
