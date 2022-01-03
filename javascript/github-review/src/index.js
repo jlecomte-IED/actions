@@ -4,7 +4,7 @@ const github = require("@actions/github");
 const { graphql } = require("@octokit/graphql");
 const csvToMarkdown = require("csv-to-markdown-table");
 const fs = require("fs");
-const { promisify,format } = require("util");
+const { promisify, format } = require("util");
 const dateFormat = require("date-fns");
 
 const { JSONtoCSV } = require("./utils");
@@ -49,17 +49,13 @@ class CollectOrgData {
     }
   }
 
-  async createandUploadArtifacts() {
+  async createandUploadArtifacts(files) {
     if (!process.env.GITHUB_RUN_NUMBER) {
       return core.debug("not running in actions, skipping artifact upload");
     }
 
     const artifactClient = artifact.create();
     const artifactName = `review-report-${new Date().getTime()}`;
-    const files = [
-      `./data/${ARTIFACT_FILE_NAME}.json`,
-      `./data/${ARTIFACT_FILE_NAME}.csv`
-    ];
     const rootDirectory = "./";
     const options = { continueOnError: true };
 
@@ -154,9 +150,9 @@ class CollectOrgData {
 
     core.info(queryBody);
     core.info(organization);
-    
+
     const { organization: data } = await this.graphqlClient(
-      format(orgPullRequestQuery,queryBody)
+      format(orgPullRequestQuery, queryBody)
     );
     core.info('ici');
     core.info(data);
@@ -392,25 +388,107 @@ class CollectOrgData {
     });
   }
 
+  normalizeTeamsRepoResult() {
+    let normalizedData = [];
+    core.info(`⚛  Normalizing global result.`);
+    Object.keys(this.result).forEach(organization => {
+      if (!this.result[organization]) {
+        return;
+      }
+
+      this.result[organization].teams.edges.forEach(team => {
+        if (!team) {
+          return;
+        }
+        team.node.repositories.edges.forEach(repository => {
+          normalizedData.push(
+            {
+              organization,
+              team: team.node.name,
+              repository: repository.node.nameWithOwner,
+            }
+          )
+        });
+      });
+    });
+
+    return normalizedData;
+  }
+
+  normalizeTeamsMembersResult() {
+    let normalizedData = [];
+    core.info(`⚛  Normalizing global result.`);
+    Object.keys(this.result).forEach(organization => {
+      if (!this.result[organization]) {
+        return;
+      }
+
+      this.result[organization].teams.edges.forEach(team => {
+        if (!team) {
+          return;
+        }
+        team.node.members.edges.forEach(member => {
+          normalizedData.push({
+            team: team.node.name,
+            memberName: member.node.name,
+            memberLogin: member.node.login
+          });
+        });
+      });
+    });
+
+    return normalizedData;
+  }
+
   async endOrgReview() {
     await this.normalizeResult();
-    const json = this.orgNormalizedData;
+    const result_json = this.orgNormalizedData;
+    const repositories_json = await this.normalizeTeamsRepoResult();
+    const members_json = await this.normalizeTeamsMembersResult();
 
-    if (!json.length) {
+    if (!result_json.length) {
       return core.setFailed(`⚠️  No data collected. Stopping action`);
     }
 
-    const csv = JSONtoCSV(json);
+    const result_csv = JSONtoCSV(result_json);
+    const repositories_csv = JSONtoCSV(repositories_json);
+    const members_csv = JSONtoCSV(members_json);
+
+    /**********************************/
+    /*** Create Result CSV and JSON ***/
 
     await writeFileAsync(
       `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}.json`,
-      JSON.stringify(json)
+      JSON.stringify(result_json)
     );
-    await writeFileAsync(`${DATA_FOLDER}/${ARTIFACT_FILE_NAME}.csv`, csv);
+    await writeFileAsync(`${DATA_FOLDER}/${ARTIFACT_FILE_NAME}.csv`, result_csv);
 
-    await this.createandUploadArtifacts();
+    /*** Create Teams Repo CSV and JSON ***/
+    await writeFileAsync(
+      `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}_teams_repositories.json`,
+      JSON.stringify(repositories_json)
+    );
+    await writeFileAsync(`${DATA_FOLDER}/${ARTIFACT_FILE_NAME}_teams_repositories.csv`, repositories_csv);
 
-    /***** POSTING TO ISSUE ****/
+    /*** Create Teams Members CSV and JSON ***/
+    await writeFileAsync(
+      `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}_teams_members.json`,
+      JSON.stringify(members_json)
+    );
+    await writeFileAsync(`${DATA_FOLDER}/${ARTIFACT_FILE_NAME}_teams_members.csv`, members_csv);
+
+    await this.createandUploadArtifacts([
+      `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}.json`,
+      `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}.csv`,
+      `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}_teams_repositories.json`,
+      `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}_teams_repositories.csv`,
+      `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}_teams_members.json`,
+      `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}_teams_members.csv`
+    ]);
+
+    /****************************
+    ***** POSTING TO ISSUE ****
+    **************************/
 
     if (!this.options.postToIssue) {
       return core.info(
@@ -418,43 +496,55 @@ class CollectOrgData {
       );
     }
 
-    const issue_param = await this.createIssue();
-    core.info(`Posting result to issue ${this.options.repository}.`);
+    const issue_param = await this.createIssue(`# Github Access Review`);
+    core.info(`Posting result to issue in ${this.options.repository}.`);
 
     // Pull request review comment
 
-    let pull_request_comment = `
-    
-    # Pull Request Info
+    // let pull_request_comment = `
 
-    ### Pull Request Created: 
-    ### Pull Request Closed: 
-    `
+    // # Pull Request Info
+
+    // ### Pull Request Created: 
+    // ### Pull Request Closed: 
+    // `
 
 
-    await this.postCommentToIssue(
-      issue_param.owner,
-      issue_param.repo,
-      issue_param.issue_number,
-      body
-    );
+    // await this.postCommentToIssue(
+    //   issue_param.owner,
+    //   issue_param.repo,
+    //   issue_param.issue_number,
+    //   body
+    // );
+    // Repositories Review
 
-    // Membership review comment
+    let comment_body = `
+    # Repositories review
 
-    let review_result =
-      `
-    # Members review
-    ${csvToMarkdown(csv)}
+    ${csvToMarkdown(members_csv)}
     `;
 
     await this.postCommentToIssue(
       issue_param.owner,
       issue_param.repo,
       issue_param.issue_number,
-      review_result
+      comment_body
     );
 
+    // Members review comment
 
+    comment_body = `
+    # Members review
+
+    ${csvToMarkdown(members_csv)}
+    `;
+
+    await this.postCommentToIssue(
+      issue_param.owner,
+      issue_param.repo,
+      issue_param.issue_number,
+      comment_body
+    );
 
     process.exit();
   }

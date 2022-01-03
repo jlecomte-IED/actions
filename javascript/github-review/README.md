@@ -57,7 +57,7 @@ jobs:
     - name: Github Review Action
       uses: fulll/actions/javascript/github-review@master
       with:
-        enterprise: 'fulll'
+        organization: 'fulll'
         token: ${{ secrets.TOKEN }}
         issue: true
 ```
