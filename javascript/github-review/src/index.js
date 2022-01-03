@@ -344,8 +344,8 @@ class CollectOrgData {
       for (const { login } of this.organizations) {
         core.startGroup(`🔍 Start collecting for organization ${login}.`);
         this.result[login] = null;
-        //await this.collectTeamsData(login);
-        await this.collectPullRequestData(login);
+        await this.collectTeamsData(login);
+        //await this.collectPullRequestData(login);
 
         if (this.result[login]) {
           core.info(
