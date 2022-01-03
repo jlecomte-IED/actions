@@ -90,6 +90,8 @@ class CollectOrgData {
       body: body
     });
 
+    let issue_param;
+
     issue_param.push({
       owner: owner,
       repo: repo,
@@ -154,7 +156,6 @@ class CollectOrgData {
     const { organization: data } = await this.graphqlClient(
       format(orgPullRequestQuery, queryBody)
     );
-    core.info('ici');
     core.info(data);
 
     return data;
@@ -390,7 +391,7 @@ class CollectOrgData {
 
   normalizeTeamsRepoResult() {
     let normalizedData = [];
-    core.info(`⚛  Normalizing global result.`);
+    core.info(`⚛  Normalizing repositories result.`);
     Object.keys(this.result).forEach(organization => {
       if (!this.result[organization]) {
         return;
@@ -417,7 +418,7 @@ class CollectOrgData {
 
   normalizeTeamsMembersResult() {
     let normalizedData = [];
-    core.info(`⚛  Normalizing global result.`);
+    core.info(`⚛  Normalizing members result.`);
     Object.keys(this.result).forEach(organization => {
       if (!this.result[organization]) {
         return;
