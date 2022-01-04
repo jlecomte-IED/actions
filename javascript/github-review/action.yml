@@ -14,6 +14,12 @@ inputs:
   issueTitle:
     description: 'If you want to custom the issue title'
     required: false
+  labels:
+    description: 'Issue labels'
+    required: false
+  assignees: 
+    description: 'Assign people to issue'
+    required: false
 outputs:
   csv:
     description: 'A CSV string with the output'
