@@ -35,7 +35,7 @@ class OrgDataCollector {
     this.lastTrackedTeam = null;
 
     this.initiateGraphQLClient(token);
-    this.githubTools = new GithubTools(token, organization, options);
+    this.githubTools = new GithubTools(token, organization, this.options);
     this.analyser = new Analyser(this.orgNormalizedData);
   }
 
@@ -361,7 +361,7 @@ class OrgDataCollector {
     }
 
     let body;
-
+  
     await this.githubTools.findReviewIssue();
 
     //Posting result comment
@@ -376,8 +376,8 @@ class OrgDataCollector {
       `\n` +
       `### Pull Request review results\n` +
       `\n` +
-      `Organization PR Created between ${this.pullRequestData.beginDate} and ${this.pullRequestData.beginDate} = ${this.pullRequestData.prCreated} \n` +
-      `Organization PR Closed between ${this.pullRequestData.beginDate} and ${this.pullRequestData.beginDate} = ${this.pullRequestData.prClosed}`;
+      `Organization PR Created between ${this.pullRequestData.beginDate} and ${this.pullRequestData.endDate} = ${this.pullRequestData.prCreated} \n` +
+      `Organization PR Closed between ${this.pullRequestData.beginDate} and ${this.pullRequestData.endDate} = ${this.pullRequestData.prClosed}`;
     await this.githubTools.postCommentToIssue(body);
 
     //Posting analysis
