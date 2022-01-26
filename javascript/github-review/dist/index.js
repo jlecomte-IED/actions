@@ -51936,14 +51936,14 @@ class GithubTools {
         "\n" +
         "Conformément au :\n" +
         "\n" +
-        "- **[Programme d'audits/revues](https://drive.google.com/file/d/1RmeAvqPG13if2JOKrls6dsrPmj1S0pvC/view?usp=sharing)**\n" +
-        "- [Calendrier](https://docs.google.com/spreadsheets/d/13yhn6CqCMnXzRdPXuO6VZjvCG7B1GX3z3gzAtrqJzNs/edit#gid=2130840454)\n" +
+        "- **[Programme d'audits/revues]()**\n" +
+        "- [Calendrier]()\n" +
         "\n" +
         "### Ressources documentaires à mettre à jour\n" +
         "\n" +
-        "ℹ️ Se reporter au **[wiki correspondant](https://github.com/inextensodigital/ISO-27001/wiki/Revue-acc%C3%A8s-Github)**\n" +
+        "ℹ️ Se reporter au **[wiki correspondant]()**\n" +
         "\n" +
-        "- [Liste des accès github](https://drive.google.com/open?id=0B02B1QGmE8jIYVlPY0k0Yy1ob0E)\n";
+        "- [Liste des accès github]()\n";
 
       this.createIssue(body, reviewIssueTitle);
     }
