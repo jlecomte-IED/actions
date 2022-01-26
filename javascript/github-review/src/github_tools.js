@@ -21,13 +21,14 @@ class GithubTools {
   }
 
   async createIssue(body, issueTitle) {
+    console.log(this.options);
     const { data: issue_response } = await this.octokit.issues.create({
       owner: this.owner,
       repo: this.repo,
       title: `[Github-Actions] ${dateFormat.format(new Date(), 'MM/yyyy')} ${issueTitle}`,
       body: body,
       labels: this.options.labels,
-      assignee: this.options.assignee
+      assignees: this.options.assignees
     });
     this.issue_number = issue_response.number;
     core.info(`Issue #${this.issue_number} in ${this.options.repository} has been created`);
@@ -79,7 +80,7 @@ class GithubTools {
     const { data: issueList } = await this.octokit.issues.listForRepo({
       owner: this.owner,
       repo: this.repo,
-      labels: "check",
+      labels: ["check"],
       state: "open"
     });
 
@@ -106,7 +107,7 @@ class GithubTools {
         "\n" +
         "- [Liste des accès github]()\n";
 
-      this.createIssue(body, reviewIssueTitle);
+      await this.createIssue(body, reviewIssueTitle);
     }
   }
 }

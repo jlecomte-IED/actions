@@ -51478,7 +51478,7 @@ class OrgDataCollector {
     this.lastTrackedTeam = null;
 
     this.initiateGraphQLClient(token);
-    this.githubTools = new GithubTools(token, organization, options);
+    this.githubTools = new GithubTools(token, organization, this.options);
     this.analyser = new Analyser(this.orgNormalizedData);
   }
 
@@ -51804,7 +51804,7 @@ class OrgDataCollector {
     }
 
     let body;
-
+  
     await this.githubTools.findReviewIssue();
 
     //Posting result comment
@@ -51819,8 +51819,8 @@ class OrgDataCollector {
       `\n` +
       `### Pull Request review results\n` +
       `\n` +
-      `Organization PR Created between ${this.pullRequestData.beginDate} and ${this.pullRequestData.beginDate} = ${this.pullRequestData.prCreated} \n` +
-      `Organization PR Closed between ${this.pullRequestData.beginDate} and ${this.pullRequestData.beginDate} = ${this.pullRequestData.prClosed}`;
+      `Organization PR Created between ${this.pullRequestData.beginDate} and ${this.pullRequestData.endDate} = ${this.pullRequestData.prCreated} \n` +
+      `Organization PR Closed between ${this.pullRequestData.beginDate} and ${this.pullRequestData.endDate} = ${this.pullRequestData.prClosed}`;
     await this.githubTools.postCommentToIssue(body);
 
     //Posting analysis
@@ -51860,13 +51860,14 @@ class GithubTools {
   }
 
   async createIssue(body, issueTitle) {
+    console.log(this.options);
     const { data: issue_response } = await this.octokit.issues.create({
       owner: this.owner,
       repo: this.repo,
       title: `[Github-Actions] ${dateFormat.format(new Date(), 'MM/yyyy')} ${issueTitle}`,
       body: body,
       labels: this.options.labels,
-      assignee: this.options.assignee
+      assignees: this.options.assignees
     });
     this.issue_number = issue_response.number;
     core.info(`Issue #${this.issue_number} in ${this.options.repository} has been created`);
@@ -51918,7 +51919,7 @@ class GithubTools {
     const { data: issueList } = await this.octokit.issues.listForRepo({
       owner: this.owner,
       repo: this.repo,
-      labels: "check",
+      labels: ["check"],
       state: "open"
     });
 
@@ -51945,7 +51946,7 @@ class GithubTools {
         "\n" +
         "- [Liste des accès github]()\n";
 
-      this.createIssue(body, reviewIssueTitle);
+      await this.createIssue(body, reviewIssueTitle);
     }
   }
 }
@@ -52327,6 +52328,7 @@ const core = __nccwpck_require__(8864);
 const OrgDataCollector = __nccwpck_require__(3350);
 
 const DEFAULT_ISSUE_TITLE = "Github Organization Review";
+const DEFAULT_ISSUE_LABELS = ["check"]
 
 const main = async () => {
   const token = core.getInput("token") || process.env.TOKEN;
@@ -52336,8 +52338,8 @@ const main = async () => {
     repository: process.env.GITHUB_REPOSITORY,
     postToIssue: core.getInput("postToIssue") || process.env.ISSUE,
     issueTitle: core.getInput("issueTitle") || DEFAULT_ISSUE_TITLE,
-    labels: core.getInput("labels") || "",
-    assignees: core.getInput("assignees") || ""
+    labels: core.getInput("labels").split(",") || DEFAULT_ISSUE_LABELS,
+    assignees: core.getInput("assignees").split(",") || [""]
   });
 
   await Collector.startOrgReview();
