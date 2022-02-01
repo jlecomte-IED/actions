@@ -4,6 +4,9 @@ inputs:
   organization:
     description: 'Specify an organization if you want to audit a single org. Only specify either an organization or an enterprise account.'
     required: true
+  review:
+    description: 'Review type. Value can be members or indicators'
+    required: true
   token:
     description: 'Scopes required: repo, read:org, read:enterprise (if using enterprise mode)'
     required: true
@@ -20,9 +23,6 @@ inputs:
   assignees: 
     description: 'Assign people to issue'
     required: false
-outputs:
-  csv:
-    description: 'A CSV string with the output'
 runs:
   using: 'node12'
   main: 'dist/index.js'

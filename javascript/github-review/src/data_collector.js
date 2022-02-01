@@ -9,7 +9,7 @@ const Analyser = require("./analyser");
 const GithubTools = require("./github_tools");
 const {
   orgTeamsAndReposAndMembersQuery,
-  orgPullRequestQuery,
+  orgSearchAndCountQuery,
 } = require("./queries");
 const { csvToMarkdown } = require("csv-to-markdown-table/lib/CsvToMarkdown");
 
@@ -32,6 +32,7 @@ class OrgDataCollector {
     this.result = {};
     this.orgNormalizedData = [];
     this.pullRequestData = {};
+    this.indicators = new Object();
     this.lastTrackedTeam = null;
 
     this.initiateGraphQLClient(token);
@@ -86,13 +87,42 @@ class OrgDataCollector {
     }
     console.log(queryBody);
     const data = await this.graphqlClient(
-      orgPullRequestQuery, {
+      orgSearchAndCountQuery, {
       q: queryBody
     }
     );
     console.log(data);
 
     return data;
+  }
+
+  async searchAndCountIssue(organization, query) {
+    let data;
+    try {
+      data = await this.graphqlClient(
+        orgSearchAndCountQuery,
+        {
+          q: query
+        }
+      );
+
+    } catch (error) {
+      core.info(error.message);
+      if (error.message === ERROR_MESSAGE_TOKEN_UNAUTHORIZED) {
+        core.info(
+          `⏸  The token you use isn't authorized to be used with ${organization}`
+        );
+        return null;
+      }
+    } finally {
+      if (!data) {
+        core.info(
+          `⏸  No data found for ${organization}, probably you don't have the right permission`
+        );
+        return;
+      }
+      return data.search.issueCount;
+    }
   }
 
   async getPullRequestCount(organization, isClosed, creationPeriod) {
@@ -271,13 +301,85 @@ class OrgDataCollector {
     this.pullRequestData.prClosed = nbPullResquestClosed;
   }
 
-  async startOrgReview() {
+  async collectIndicators(organization) {
+    let indicators = new Object;
+    let date = new Date();
+    let firstDayString = dateFormat.format(new Date(date.getFullYear(), date.getMonth() - 1, 1), 'yyyy-MM-dd');
+    let lastDayString = dateFormat.format(new Date(date.getFullYear(), date.getMonth(), 0), 'yyyy-MM-dd');
+    let creationPeriod = firstDayString + ".." + lastDayString;
+
+    console.log(creationPeriod);
+
+    this.indicators.BUGS_OPEN = await this.searchAndCountIssue(
+      organization,
+      `repo:fulll/superheroes is:issue is:open label:bug created:${creationPeriod}`
+    );
+
+    this.indicators.BUGS_CLOSED = await this.searchAndCountIssue(
+      organization,
+      `repo:fulll/superheroes is:issue is:closed label:bug closed:${creationPeriod}`
+    );
+
+    this.indicators.DEV_PULLS_OPEN = await this.searchAndCountIssue(
+      organization,
+      `org:${organization} is:pr archived:false created:${creationPeriod}`
+    );
+
+    this.indicators.DEV_PULLS_CLOSED = await this.searchAndCountIssue(
+      organization,
+      `org:${organization} is:pr is:closed archived:false created:${creationPeriod}`
+    );
+
+    this.indicators.SMSI_THIRD_FAILURE_COUNT = await this.searchAndCountIssue(
+      organization,
+      `repo:${this.options.repository} is:issue is:open label:third created:${creationPeriod}`
+    );
+
+    this.indicators.SMSI_FAILURE_OPEN = await this.searchAndCountIssue(
+      organization,
+      `repo:${this.options.repository} is:issue is:open label:failure created:${creationPeriod}`
+    );
+
+    this.indicators.SMSI_FAILURE_CLOSED = await this.searchAndCountIssue(
+      organization,
+      `repo:${this.options.repository} is:issue is:closed label:failure closed:${creationPeriod}`
+    );
+
+    this.indicators.SMSI_FAILURE_PENDING = await this.searchAndCountIssue(
+      organization,
+      `repo:${this.options.repository} is:issue is:open label:failure`
+    );
+
+    this.indicators.SMSI_FAILURE_CRITICAL = await this.searchAndCountIssue(
+      organization,
+      `repo:${this.options.repository} is:issue is:open label:failure label:critical created:${creationPeriod}`
+    );
+    
+    this.indicators.SMSI_FAILURE_ANALYSIS = await this.searchAndCountIssue(
+      organization,
+      `repo:${this.options.repository} is:issue is:open label:failure label:critical created:${creationPeriod}`
+    );
+
+    this.indicators.SMSI_NC_COUNT = await this.searchAndCountIssue(
+      organization,
+      `repo:${this.options.repository} is:issue is:open label:bug created:${creationPeriod}`
+    );
+
+    this.indicators.SMSI_OPP_COUNT = await this.searchAndCountIssue(
+      organization,
+      `repo:${this.options.repository} is:issue is:open label:enhancement created:${creationPeriod}`
+    );
+
+    console.info(this.indicators);
+
+  }
+
+  async startOrgReview(organization) {
     try {
       for (const { login } of this.organizations) {
         core.startGroup(`🔍 Start collecting for organization ${login}.`);
         this.result[login] = null;
         await this.collectTeamsData(login);
-        await this.collectPullRequestData(login);
         if (this.result[login]) {
           core.info(
             `✅ Finished collecting for organization ${login}`
@@ -331,11 +433,11 @@ class OrgDataCollector {
     if (!result_json.length) {
       return core.setFailed(`⚠️  No data collected. Stopping action`);
     }
-    
+
     /**********************************
     *** Create Artifact CSV and JSON ***
     **********************************/
-   const json_filePath = `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}-${dateFormat.format(new Date(), 'yyyy-MM-dd')}.json`
+    const json_filePath = `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}-${dateFormat.format(new Date(), 'yyyy-MM-dd')}.json`
 
     await writeFileAsync(
       json_filePath,
@@ -350,7 +452,7 @@ class OrgDataCollector {
     await this.analyser.startAnalysis();
 
     // Posting review
-    await this.postingReview();
+    //await this.postingReview();
 
     process.exit();
   }
@@ -361,7 +463,7 @@ class OrgDataCollector {
     }
 
     let body;
-  
+
     await this.githubTools.findReviewIssue();
 
     //Posting result comment
@@ -384,6 +486,17 @@ class OrgDataCollector {
     body = `#### Member(s) with no name:`;
     this.analyser.analysisResults.membersWithNoName.forEach(member => body = body + `\n- ${member}`);
     await this.githubTools.postCommentToIssue(body);
+  }
+
+  async startIndicatorsReview() {
+    try {
+      for (const { login } of this.organizations) {
+        core.startGroup(`🔍 Start collecting Indicators in organization ${login}.`);
+        await this.collectIndicators(organization);
+      }
+    } catch (error) {
+      console.log(error.message);
+    }
   }
 }
 

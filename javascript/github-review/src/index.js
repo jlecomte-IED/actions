@@ -16,7 +16,13 @@ const main = async () => {
     assignees: core.getInput("assignees").split(",") || [""]
   });
 
-  await Collector.startOrgReview();
+  if (core.getInput("review") == "members"){
+    await Collector.startOrgReview();
+  } else if(core.getInput("review") == "indicators"){
+    await Collector.startIndicatorsReview();
+  } else {
+    core.info('review is not set in workflow');
+  }
 };
 
 try {

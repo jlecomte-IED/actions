@@ -135,7 +135,7 @@ const queries = {
       }
     }
   }`,
-  orgPullRequestQuery: `
+  orgSearchAndCountQuery: `
   query($q: String!){
     search(query: $q , type: ISSUE, last: 100)   
     {
