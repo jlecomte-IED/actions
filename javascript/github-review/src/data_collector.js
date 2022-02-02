@@ -354,7 +354,7 @@ class OrgDataCollector {
       organization,
       `repo:${this.options.repository} is:issue is:open label:failure label:critical created:${creationPeriod}`
     );
-    
+
     this.indicators.SMSI_FAILURE_ANALYSIS = await this.searchAndCountIssue(
       organization,
       `repo:${this.options.repository} is:issue is:open label:failure label:critical created:${creationPeriod}`
@@ -492,7 +492,37 @@ class OrgDataCollector {
     try {
       for (const { login } of this.organizations) {
         core.startGroup(`🔍 Start collecting Indicators in organization ${login}.`);
-        await this.collectIndicators(organization);
+        console.log(this.indicators);
+        await this.collectIndicators(login);
+
+        if (this.indicators) {
+          core.info(
+            `✅ Finished collecting ISMS indicators for organization ${login}`
+          );
+          core.endGroup();
+        }
+
+        let indicators_json = []
+        Object.entries(this.indicators).forEach(([key, value]) => {
+          indicators_json.push({
+            indicators: key,
+            values: value
+          })
+        });
+
+        console.log(indicators_json);
+        const indicators_csv = JSONtoCSV(indicators_json);
+
+        await writeFileAsync(
+          `${DATA_FOLDER}/${login}-ISMS-indicators.json`,
+          JSON.stringify(indicators_json)
+        );
+
+        await writeFileAsync(
+          `${DATA_FOLDER}/${login}-ISMS-indicators.csv`,
+          indicators_csv
+        );
+
       }
     } catch (error) {
       console.log(error.message);

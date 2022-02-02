@@ -8,6 +8,7 @@ const main = async () => {
   const token = core.getInput("token") || process.env.TOKEN;
   const organization =
     core.getInput("organization") || process.env.ORGANIZATION;
+  const reviewType = core.getInput("review") || process.env.REVIEW
   const Collector = new OrgDataCollector(token, organization, {
     repository: process.env.GITHUB_REPOSITORY,
     postToIssue: core.getInput("postToIssue") || process.env.ISSUE,
@@ -16,9 +17,9 @@ const main = async () => {
     assignees: core.getInput("assignees").split(",") || [""]
   });
 
-  if (core.getInput("review") == "members"){
+  if (reviewType == "members") {
     await Collector.startOrgReview();
-  } else if(core.getInput("review") == "indicators"){
+  } else if (reviewType == "indicators") {
     await Collector.startIndicatorsReview();
   } else {
     core.info('review is not set in workflow');
