@@ -51813,6 +51813,36 @@ class OrgDataCollector {
       `repo:${this.options.repository} is:issue is:open label:enhancement created:${creationPeriod}`
     );
 
+    this.indicators.HR_EMPLOYEE_IN_LYON = await this.searchAndCountIssue(
+      organization,
+      `repo:fulll/service-rh is:issue is:open label:entree label:lyon created:${creationPeriod}`
+    );
+
+    this.indicators.HR_EMPLOYEE_OUT_LYON = await this.searchAndCountIssue(
+      organization,
+      `repo:fulll/service-rh is:issue is:open label:sortie label:aix created:${creationPeriod}`
+    );
+
+    this.indicators.HR_EMPLOYEE_IN_AIX = await this.searchAndCountIssue(
+      organization,
+      `repo:fulll/service-rh is:issue is:open label:entree label:aix created:${creationPeriod}`
+    );
+
+    this.indicators.HR_EMPLOYEE_OUT_AIX = await this.searchAndCountIssue(
+      organization,
+      `repo:fulll/service-rh is:issue is:open label:sortie label:aix created:${creationPeriod}`
+    );
+
+    this.indicators.HR_EMPLOYEE_IN_ROUEN = await this.searchAndCountIssue(
+      organization,
+      `repo:fulll/service-rh is:issue is:open label:entree label:rouen created:${creationPeriod}`
+    );
+
+    this.indicators.HR_EMPLOYEE_OUT_ROUEN = await this.searchAndCountIssue(
+      organization,
+      `repo:fulll/service-rh is:issue is:open label:sortie label:rouen created:${creationPeriod}`
+    );
+
     console.info(this.indicators);
 
   }
