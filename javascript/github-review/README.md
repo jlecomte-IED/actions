@@ -49,26 +49,6 @@ Note: action check for previous month indicators.
 
 ## Example workflows
 
-### Members Review on push (good for testing)
-
-```yml
-on: push
-
-jobs:
-
-  github_review:
-    runs-on: ubuntu-latest
-    name: Github Review
-
-    - name: Github Review Action
-      uses: fulll/actions/javascript/github-review@master
-      with:
-        organization: 'fulll'
-        token: ${{ secrets.TOKEN }}
-        postToIssue: true
-        issueTitle: 'Teams review'
-```
-
 ### Members Review on a schedule (cron)
 
 ```yml
@@ -87,10 +67,35 @@ jobs:
       uses: fulll/actions/javascript/github-review@master
       with:
         organization: 'fulll'
+        review: 'members'
         token: ${{ secrets.TOKEN }}
-        issue: true
+        postToIssue: true
+        issueTitle: 'My review'
+        labels: 'check,security'
+        assignees: 'toto1,toto2'
 ```
 ### Indicators Review on a schedule (cron)
+
+```yml
+on:
+  schedule:   
+    # Once a week on Saturday 00:00
+    - cron:  '0 0 * * 6'
+
+jobs:
+
+  github_review:
+    runs-on: ubuntu-latest
+    name: Github Review
+
+    - name: Github Review Action
+      uses: fulll/actions/javascript/github-review@master
+      with:
+        organization: 'fulll'
+        review: 'indicators'
+        token: ${{ secrets.TOKEN }}
+        postToIssue: false
+```
 
 ## Local testing
 

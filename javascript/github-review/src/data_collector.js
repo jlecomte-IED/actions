@@ -506,7 +506,7 @@ class OrgDataCollector {
         Object.entries(this.indicators).forEach(([key, value]) => {
           indicators_json.push({
             indicators: key,
-            values: value
+            value: value
           })
         });
 
