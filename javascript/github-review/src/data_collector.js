@@ -410,6 +410,7 @@ class OrgDataCollector {
         core.startGroup(`🔍 Start collecting for organization ${login}.`);
         this.result[login] = null;
         await this.collectTeamsData(login);
+        await this.collectPullRequestData(login);
         if (this.result[login]) {
           core.info(
             `✅ Finished collecting for organization ${login}`
@@ -482,7 +483,7 @@ class OrgDataCollector {
     await this.analyser.startAnalysis();
 
     // Posting review
-    //await this.postingReview();
+    await this.postingReview();
 
     process.exit();
   }
