@@ -52382,8 +52382,7 @@ class IndicatorsCollector {
           `${file_path}.json`
         ]);
 
-        
-
+        process.exit();
       }
     } catch (error) {
       console.log(error.message);
