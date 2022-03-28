@@ -1,5 +1,4 @@
 const core = require("@actions/core");
-const { graphql } = require("@octokit/graphql");
 const { promisify, format } = require("util");
 const { JSONtoCSV } = require("./utils");
 const fs = require("fs");
@@ -7,10 +6,6 @@ const dateFormat = require("date-fns");
 
 const Analyser = require("./analyser");
 const GithubTools = require("./github_tools");
-const {
-  orgTeamsAndReposAndMembersQuery,
-  orgSearchAndCountQuery,
-} = require("./queries");
 const { csvToMarkdown } = require("csv-to-markdown-table/lib/CsvToMarkdown");
 
 
@@ -49,86 +44,10 @@ class OrgDataCollector {
     }
   }
 
-  initiateGraphQLClient(token) {
-    this.graphqlClient = graphql.defaults({
-      headers: {
-        authorization: `token ${token}`
-      }
-    });
-  }
-
-  async requestOrgTeamsAndReposAndMembers(
-    organization,
-    teamsCursor = null,
-    repositoriesCursor = null,
-    membersCursor = null
-  ) {
-    const { organization: data } = await this.graphqlClient(
-      orgTeamsAndReposAndMembersQuery,
-      {
-        organization,
-        teamsCursor,
-        repositoriesCursor,
-        membersCursor
-      }
-    );
-
-    return data;
-  }
-
-  async requestOrgPullRequest(
-    organization,
-    isClosed,
-    creationPeriod
-  ) {
-    let queryBody = `org:${organization} is:pr archived:false created:${creationPeriod}`;
-    if (isClosed != null) {
-      queryBody = queryBody + " " + isClosed;
-    }
-    console.log(queryBody);
-    const data = await this.graphqlClient(
-      orgSearchAndCountQuery, {
-      q: queryBody
-    }
-    );
-    console.log(data);
-
-    return data;
-  }
-
-  async searchAndCountIssue(organization, query) {
-    let data;
-    try {
-      data = await this.graphqlClient(
-        orgSearchAndCountQuery,
-        {
-          q: query
-        }
-      );
-
-    } catch (error) {
-      core.info(error.message);
-      if (error.message === ERROR_MESSAGE_TOKEN_UNAUTHORIZED) {
-        core.info(
-          `⏸  The token you use isn't authorized to be used with ${organization}`
-        );
-        return null;
-      }
-    } finally {
-      if (!data) {
-        core.info(
-          `⏸  No data found for ${organization}, probably you don't have the right permission`
-        );
-        return;
-      }
-      return data.search.issueCount;
-    }
-  }
-
   async getPullRequestCount(organization, isClosed, creationPeriod) {
     let data;
     try {
-      data = await this.requestOrgPullRequest(
+      data = await this.githubTools.requestOrgPullRequest(
         organization,
         isClosed,
         creationPeriod
@@ -156,7 +75,7 @@ class OrgDataCollector {
   async collectTeamsData(organization, teamsCursor, repositoriesCursor, membersCursor) {
     let data;
     try {
-      data = await this.requestOrgTeamsAndReposAndMembers(
+      data = await this.githubTools.requestOrgTeamsAndReposAndMembers(
         organization,
         teamsCursor,
         repositoriesCursor,
@@ -301,109 +220,6 @@ class OrgDataCollector {
     this.pullRequestData.prClosed = nbPullResquestClosed;
   }
 
-  async collectIndicators(organization) {
-    let indicators = new Object;
-    let date = new Date();
-    let firstDayString = dateFormat.format(new Date(date.getFullYear(), date.getMonth() - 1, 1), 'yyyy-MM-dd');
-    let lastDayString = dateFormat.format(new Date(date.getFullYear(), date.getMonth(), 0), 'yyyy-MM-dd');
-    let creationPeriod = firstDayString + ".." + lastDayString;
-
-    console.log(creationPeriod);
-
-    this.indicators.BUGS_OPEN = await this.searchAndCountIssue(
-      organization,
-      `repo:fulll/superheroes is:issue is:open label:bug created:${creationPeriod}`
-    );
-
-    this.indicators.BUGS_CLOSED = await this.searchAndCountIssue(
-      organization,
-      `repo:fulll/superheroes is:issue is:closed label:bug closed:${creationPeriod}`
-    );
-
-    this.indicators.DEV_PULLS_OPEN = await this.searchAndCountIssue(
-      organization,
-      `org:${organization} is:pr archived:false created:${creationPeriod}`
-    );
-
-    this.indicators.DEV_PULLS_CLOSED = await this.searchAndCountIssue(
-      organization,
-      `org:${organization} is:pr is:closed archived:false created:${creationPeriod}`
-    );
-
-    this.indicators.SMSI_THIRD_FAILURE_COUNT = await this.searchAndCountIssue(
-      organization,
-      `repo:${this.options.repository} is:issue is:open label:third created:${creationPeriod}`
-    );
-
-    this.indicators.SMSI_FAILURE_OPEN = await this.searchAndCountIssue(
-      organization,
-      `repo:${this.options.repository} is:issue is:open label:failure created:${creationPeriod}`
-    );
-
-    this.indicators.SMSI_FAILURE_CLOSED = await this.searchAndCountIssue(
-      organization,
-      `repo:${this.options.repository} is:issue is:closed label:failure closed:${creationPeriod}`
-    );
-
-    this.indicators.SMSI_FAILURE_PENDING = await this.searchAndCountIssue(
-      organization,
-      `repo:${this.options.repository} is:issue is:open label:failure`
-    );
-
-    this.indicators.SMSI_FAILURE_CRITICAL = await this.searchAndCountIssue(
-      organization,
-      `repo:${this.options.repository} is:issue is:open label:failure label:critical created:${creationPeriod}`
-    );
-
-    this.indicators.SMSI_FAILURE_ANALYSIS = await this.searchAndCountIssue(
-      organization,
-      `repo:${this.options.repository} is:issue is:open label:failure label:critical created:${creationPeriod}`
-    );
-
-    this.indicators.SMSI_NC_COUNT = await this.searchAndCountIssue(
-      organization,
-      `repo:${this.options.repository} is:issue is:open label:bug created:${creationPeriod}`
-    );
-
-    this.indicators.SMSI_OPP_COUNT = await this.searchAndCountIssue(
-      organization,
-      `repo:${this.options.repository} is:issue is:open label:enhancement created:${creationPeriod}`
-    );
-
-    this.indicators.HR_EMPLOYEE_IN_LYON = await this.searchAndCountIssue(
-      organization,
-      `repo:fulll/service-rh is:issue is:open label:entree label:lyon created:${creationPeriod}`
-    );
-
-    this.indicators.HR_EMPLOYEE_OUT_LYON = await this.searchAndCountIssue(
-      organization,
-      `repo:fulll/service-rh is:issue is:open label:sortie label:aix created:${creationPeriod}`
-    );
-
-    this.indicators.HR_EMPLOYEE_IN_AIX = await this.searchAndCountIssue(
-      organization,
-      `repo:fulll/service-rh is:issue is:open label:entree label:aix created:${creationPeriod}`
-    );
-
-    this.indicators.HR_EMPLOYEE_OUT_AIX = await this.searchAndCountIssue(
-      organization,
-      `repo:fulll/service-rh is:issue is:open label:sortie label:aix created:${creationPeriod}`
-    );
-
-    this.indicators.HR_EMPLOYEE_IN_ROUEN = await this.searchAndCountIssue(
-      organization,
-      `repo:fulll/service-rh is:issue is:open label:entree label:rouen created:${creationPeriod}`
-    );
-
-    this.indicators.HR_EMPLOYEE_OUT_ROUEN = await this.searchAndCountIssue(
-      organization,
-      `repo:fulll/service-rh is:issue is:open label:sortie label:rouen created:${creationPeriod}`
-    );
-
-    console.info(this.indicators);
-
-  }
-
   async startOrgReview(organization) {
     try {
       for (const { login } of this.organizations) {
@@ -483,12 +299,12 @@ class OrgDataCollector {
     await this.analyser.startAnalysis();
 
     // Posting review
-    await this.postingReview();
+    await this.postingOrgReview();
 
     process.exit();
   }
 
-  async postingReview() {
+  async postingOrgReview() {
     if (!this.options.postToIssue) {
       return core.debug("skipping posting review in issue");
     }
@@ -517,47 +333,6 @@ class OrgDataCollector {
     body = `#### Member(s) with no name:`;
     this.analyser.analysisResults.membersWithNoName.forEach(member => body = body + `\n- ${member}`);
     await this.githubTools.postCommentToIssue(body);
-  }
-
-  async startIndicatorsReview() {
-    try {
-      for (const { login } of this.organizations) {
-        core.startGroup(`🔍 Start collecting Indicators in organization ${login}.`);
-        console.log(this.indicators);
-        await this.collectIndicators(login);
-
-        if (this.indicators) {
-          core.info(
-            `✅ Finished collecting ISMS indicators for organization ${login}`
-          );
-          core.endGroup();
-        }
-
-        let indicators_json = []
-        Object.entries(this.indicators).forEach(([key, value]) => {
-          indicators_json.push({
-            indicators: key,
-            value: value
-          })
-        });
-
-        console.log(indicators_json);
-        const indicators_csv = JSONtoCSV(indicators_json);
-
-        await writeFileAsync(
-          `${DATA_FOLDER}/${login}-ISMS-indicators.json`,
-          JSON.stringify(indicators_json)
-        );
-
-        await writeFileAsync(
-          `${DATA_FOLDER}/${login}-ISMS-indicators.csv`,
-          indicators_csv
-        );
-
-      }
-    } catch (error) {
-      console.log(error.message);
-    }
   }
 }
 

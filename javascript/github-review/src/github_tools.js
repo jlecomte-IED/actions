@@ -3,6 +3,15 @@ const core = require("@actions/core");
 const csvToMarkdown = require("csv-to-markdown-table");
 const github = require("@actions/github");
 const dateFormat = require("date-fns");
+const { graphql } = require("@octokit/graphql");
+const {
+  orgTeamsAndReposAndMembersQuery,
+  orgSearchAndCountQuery,
+  orgListRepoIssueQuery
+} = require("./queries");
+
+const ERROR_MESSAGE_TOKEN_UNAUTHORIZED =
+  "Resource protected by organization SAML enforcement. You must grant your personal token access to this organization.";
 
 class GithubTools {
 
@@ -13,15 +22,116 @@ class GithubTools {
     this.owner = owner;
     this.repo = repo;
     this.issue_number = null;
+    this.result = null;
     this.initiateOctokit(token);
+    this.initiateGraphQLClient(token);
   }
 
   initiateOctokit(token) {
     this.octokit = new github.GitHub(token);
   }
 
+  initiateGraphQLClient(token) {
+    this.graphqlClient = graphql.defaults({
+      headers: {
+        authorization: `token ${token}`
+      }
+    });
+  }
+
+  /****************************** 
+   *  GraphQL Requests Methods  *
+  *******************************/
+  async requestOrgTeamsAndReposAndMembers(
+    organization,
+    teamsCursor = null,
+    repositoriesCursor = null,
+    membersCursor = null
+  ) {
+    const { organization: data } = await this.graphqlClient(
+      orgTeamsAndReposAndMembersQuery,
+      {
+        organization,
+        teamsCursor,
+        repositoriesCursor,
+        membersCursor
+      }
+    );
+
+    return data;
+  }
+
+  async requestOrgPullRequest(
+    organization,
+    isClosed,
+    creationPeriod
+  ) {
+    let queryBody = `org:${organization} is:pr archived:false created:${creationPeriod}`;
+    if (isClosed != null) {
+      queryBody = queryBody + " " + isClosed;
+    }
+    console.log(queryBody);
+    const data = await this.graphqlClient(
+      orgSearchAndCountQuery, {
+      q: queryBody
+    }
+    );
+    console.log(data);
+
+    return data;
+  }
+
+  async searchAndCountIssue(organization, query) {
+    let data;
+    try {
+      data = await this.graphqlClient(
+        orgSearchAndCountQuery,
+        {
+          q: query
+        }
+      );
+
+    } catch (error) {
+      core.info(error.message);
+      if (error.message === ERROR_MESSAGE_TOKEN_UNAUTHORIZED) {
+        core.info(
+          `⏸  The token you use isn't authorized to be used with ${organization}`
+        );
+        return null;
+      }
+    } finally {
+      if (!data) {
+        core.info(
+          `⏸  No data found for ${organization}, probably you don't have the right permission`
+        );
+        return;
+      }
+      return data.search.issueCount;
+    }
+  }
+
+  async requestOrgListRepoIssues(
+    organization,
+    repo,
+    issuesCursor = null,
+    states
+  ) {
+    const { organization: data } = await this.graphqlClient(
+      orgListRepoIssueQuery,
+      {
+        organization,
+        repo,
+        issuesCursor,
+        states
+      }
+    );
+    return data;
+  }
+
+  /****************************** 
+   *       Utils Methods        *
+  *******************************/
   async createIssue(body, issueTitle) {
-    console.log(this.options);
     const { data: issue_response } = await this.octokit.issues.create({
       owner: this.owner,
       repo: this.repo,
@@ -110,8 +220,149 @@ class GithubTools {
       await this.createIssue(body, reviewIssueTitle);
     }
   }
-}
 
+  async getIssue(issue_number) {
+    const { data: issue } = await this.octokit.issues.get({
+      owner: this.owner,
+      repo: this.repo,
+      issue_number,
+    });
+
+    return issue;
+  }
+
+  async getProjectId(project_name) {
+    let projectId;
+
+    const { data: projects } = await this.octokit.projects.listForRepo({
+      owner: this.owner,
+      repo: this.repo
+    });
+
+    projects.forEach(project => {
+      if (project.name == project_name) {
+        projectId = project.id
+      }
+    });
+
+    return projectId;
+  }
+
+  async listProjectColumns(project_id) {
+
+    const { data: projectColumns } = await this.octokit.projects.listColumns({
+      project_id,
+    });
+
+    return projectColumns;
+  }
+
+  async getColumnId(column_name, columns) {
+    let column_id;
+
+    columns.forEach(col => {
+      if (col.name == column_name) {
+        column_id = col.id;
+      }
+    });
+
+    return column_id;
+  }
+
+  async getColumn(column_id) {
+    const { data: column } = await this.octokit.projects.getColumn({
+      column_id,
+    });
+
+    return column;
+  }
+
+  async listCards(column_id) {
+    const { data: cards } = await this.octokit.projects.listCards({
+      column_id,
+    });
+
+    return cards;
+  }
+
+  /*
+    Count Issue in Kanban project.
+    If state param is not defined, opened and closed issue will be counted 
+    If creation param is not defined, issue will be counted regardless of the date of creation.
+  */
+  async countIssuesInColumn(project_name, column_name, issue_label, state) {
+
+    let issue_counter = 0;
+
+    var projectISMSId = await this.getProjectId(project_name);
+    var columns = await this.listProjectColumns(projectISMSId);
+    var column_id = await this.getColumnId(column_name, columns);
+    var cards = await this.listCards(column_id);
+
+    for (var card of cards) {
+      var issue = await this.getIssue(card.content_url.split('/').pop());
+      if (state != null) {
+        if (issue_label != null) {
+          issue.labels.forEach(label => { if (label.name == issue_label) issue_counter++; });
+        } else {
+          issue_counter++;
+        }
+      } else {
+        issue_counter++;
+      }
+    }
+
+    return issue_counter;
+
+  }
+
+  async listIssues(states) {
+    let data;
+    let result = [];
+    let issuesCursor = null;
+    let hasNextPage = true;
+
+    while (hasNextPage) {
+      try {
+        data = await this.requestOrgListRepoIssues(
+          this.organization,
+          this.repo,
+          issuesCursor,
+          states
+        );
+      } catch (error) {
+        core.info(error.message);
+        if (error.message === ERROR_MESSAGE_TOKEN_UNAUTHORIZED) {
+          core.info(
+            `⏸  The token you use isn't authorized to be used with ${this.organization}`
+          );
+          return null;
+        }
+      } finally {
+        if (!data) {
+          core.info(
+            `⏸  No data found for ${this.organization}, probably you don't have the right permission`
+          );
+          return;
+        }
+
+
+        hasNextPage = data.repository.issues.pageInfo.hasNextPage;
+        const currentPage = data.repository.issues.edges;
+        issuesCursor = data.repository.issues.pageInfo.endCursor;
+        result.push(...currentPage);
+      }
+    }
+
+    let list = [];
+    result.forEach(r => {
+      list.push(r.node);
+    });
+
+    return list;
+  }
+
+}
 module.exports = GithubTools;
 
 

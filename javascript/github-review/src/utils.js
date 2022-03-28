@@ -15,6 +15,16 @@ function JSONtoCSV(json) {
   return csv;
 }
 
+function validateInput(organization, token) {
+  if (!organization || !token) {
+    core.setFailed(
+      "The organization or token parameter are not defined."
+    );
+    process.exit();
+  }
+}
+
 module.exports = {
-  JSONtoCSV
+  JSONtoCSV,
+  validateInput
 };
