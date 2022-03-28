@@ -135,11 +135,40 @@ const queries = {
       }
     }
   }`,
-  orgPullRequestQuery: `
+  orgSearchAndCountQuery: `
   query($q: String!){
     search(query: $q , type: ISSUE, last: 100)   
     {
       issueCount
+    }
+  }`,
+  orgListRepoIssueQuery: `
+  query ($organization: String!, $repo: String!,$issuesCursor: String, $states: [IssueState!]) {
+    organization(login: $organization) {
+      repository(name: $repo) {
+        issues(first: 100 after: $issuesCursor, states: $states) {
+          edges {
+            node {
+              id
+              title
+              number
+              state
+              labels(first: 10) {
+                edges {
+                  node {
+                    name
+                  }
+                }
+              }
+            }
+          }
+          pageInfo {
+            startCursor
+            hasNextPage
+            endCursor
+          }
+        }
+      }
     }
   }`
 };

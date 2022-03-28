@@ -16755,7 +16755,7 @@ exports.createTokenAuth = createTokenAuth;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 
-var isPlainObject = __nccwpck_require__(1810);
+var isPlainObject = __nccwpck_require__(9215);
 var universalUserAgent = __nccwpck_require__(4020);
 
 function lowercaseKeys(object) {
@@ -17403,7 +17403,7 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 
 var endpoint = __nccwpck_require__(7879);
 var universalUserAgent = __nccwpck_require__(4020);
-var isPlainObject = __nccwpck_require__(1810);
+var isPlainObject = __nccwpck_require__(9215);
 var nodeFetch = _interopDefault(__nccwpck_require__(5597));
 var requestError = __nccwpck_require__(9063);
 
@@ -18342,7 +18342,7 @@ exports["default"] = void 0;
 
 var _index = _interopRequireDefault(__nccwpck_require__(6948));
 
-var _index2 = _interopRequireDefault(__nccwpck_require__(173));
+var _index2 = _interopRequireDefault(__nccwpck_require__(1810));
 
 var _index3 = _interopRequireDefault(__nccwpck_require__(8563));
 
@@ -19465,7 +19465,7 @@ module.exports = exports.default;
 
 /***/ }),
 
-/***/ 173:
+/***/ 1810:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 "use strict";
@@ -29891,7 +29891,7 @@ var _index190 = _interopRequireDefault(__nccwpck_require__(3716));
 
 var _index191 = _interopRequireDefault(__nccwpck_require__(243));
 
-var _index192 = _interopRequireDefault(__nccwpck_require__(1075));
+var _index192 = _interopRequireDefault(__nccwpck_require__(173));
 
 var _index193 = _interopRequireDefault(__nccwpck_require__(2699));
 
@@ -38268,7 +38268,7 @@ module.exports = exports.default;
 
 /***/ }),
 
-/***/ 1075:
+/***/ 173:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 "use strict";
@@ -41527,7 +41527,7 @@ module.exports.MaxBufferError = MaxBufferError;
 
 /***/ }),
 
-/***/ 1810:
+/***/ 9215:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -51442,7 +51442,6 @@ module.exports = Analyser
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 const core = __nccwpck_require__(8864);
-const { graphql } = __nccwpck_require__(4170);
 const { promisify, format } = __nccwpck_require__(3837);
 const { JSONtoCSV } = __nccwpck_require__(4727);
 const fs = __nccwpck_require__(7147);
@@ -51450,10 +51449,6 @@ const dateFormat = __nccwpck_require__(6117);
 
 const Analyser = __nccwpck_require__(5462);
 const GithubTools = __nccwpck_require__(5430);
-const {
-  orgTeamsAndReposAndMembersQuery,
-  orgPullRequestQuery,
-} = __nccwpck_require__(2046);
 const { csvToMarkdown } = __nccwpck_require__(4447);
 
 
@@ -51475,6 +51470,7 @@ class OrgDataCollector {
     this.result = {};
     this.orgNormalizedData = [];
     this.pullRequestData = {};
+    this.indicators = new Object();
     this.lastTrackedTeam = null;
 
     this.initiateGraphQLClient(token);
@@ -51491,57 +51487,10 @@ class OrgDataCollector {
     }
   }
 
-  initiateGraphQLClient(token) {
-    this.graphqlClient = graphql.defaults({
-      headers: {
-        authorization: `token ${token}`
-      }
-    });
-  }
-
-  async requestOrgTeamsAndReposAndMembers(
-    organization,
-    teamsCursor = null,
-    repositoriesCursor = null,
-    membersCursor = null
-  ) {
-    const { organization: data } = await this.graphqlClient(
-      orgTeamsAndReposAndMembersQuery,
-      {
-        organization,
-        teamsCursor,
-        repositoriesCursor,
-        membersCursor
-      }
-    );
-
-    return data;
-  }
-
-  async requestOrgPullRequest(
-    organization,
-    isClosed,
-    creationPeriod
-  ) {
-    let queryBody = `org:${organization} is:pr archived:false created:${creationPeriod}`;
-    if (isClosed != null) {
-      queryBody = queryBody + " " + isClosed;
-    }
-    console.log(queryBody);
-    const data = await this.graphqlClient(
-      orgPullRequestQuery, {
-      q: queryBody
-    }
-    );
-    console.log(data);
-
-    return data;
-  }
-
   async getPullRequestCount(organization, isClosed, creationPeriod) {
     let data;
     try {
-      data = await this.requestOrgPullRequest(
+      data = await this.githubTools.requestOrgPullRequest(
         organization,
         isClosed,
         creationPeriod
@@ -51569,7 +51518,7 @@ class OrgDataCollector {
   async collectTeamsData(organization, teamsCursor, repositoriesCursor, membersCursor) {
     let data;
     try {
-      data = await this.requestOrgTeamsAndReposAndMembers(
+      data = await this.githubTools.requestOrgTeamsAndReposAndMembers(
         organization,
         teamsCursor,
         repositoriesCursor,
@@ -51714,7 +51663,7 @@ class OrgDataCollector {
     this.pullRequestData.prClosed = nbPullResquestClosed;
   }
 
-  async startOrgReview() {
+  async startOrgReview(organization) {
     try {
       for (const { login } of this.organizations) {
         core.startGroup(`🔍 Start collecting for organization ${login}.`);
@@ -51774,11 +51723,11 @@ class OrgDataCollector {
     if (!result_json.length) {
       return core.setFailed(`⚠️  No data collected. Stopping action`);
     }
-    
+
     /**********************************
     *** Create Artifact CSV and JSON ***
     **********************************/
-   const json_filePath = `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}-${dateFormat.format(new Date(), 'yyyy-MM-dd')}.json`
+    const json_filePath = `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}-${dateFormat.format(new Date(), 'yyyy-MM-dd')}.json`
 
     await writeFileAsync(
       json_filePath,
@@ -51793,18 +51742,18 @@ class OrgDataCollector {
     await this.analyser.startAnalysis();
 
     // Posting review
-    await this.postingReview();
+    await this.postingOrgReview();
 
     process.exit();
   }
 
-  async postingReview() {
+  async postingOrgReview() {
     if (!this.options.postToIssue) {
       return core.debug("skipping posting review in issue");
     }
 
     let body;
-  
+
     await this.githubTools.findReviewIssue();
 
     //Posting result comment
@@ -51842,6 +51791,15 @@ const core = __nccwpck_require__(8864);
 const csvToMarkdown = __nccwpck_require__(4447);
 const github = __nccwpck_require__(6366);
 const dateFormat = __nccwpck_require__(6117);
+const { graphql } = __nccwpck_require__(4170);
+const {
+  orgTeamsAndReposAndMembersQuery,
+  orgSearchAndCountQuery,
+  orgListRepoIssueQuery
+} = __nccwpck_require__(2046);
+
+const ERROR_MESSAGE_TOKEN_UNAUTHORIZED =
+  "Resource protected by organization SAML enforcement. You must grant your personal token access to this organization.";
 
 class GithubTools {
 
@@ -51852,15 +51810,116 @@ class GithubTools {
     this.owner = owner;
     this.repo = repo;
     this.issue_number = null;
+    this.result = null;
     this.initiateOctokit(token);
+    this.initiateGraphQLClient(token);
   }
 
   initiateOctokit(token) {
     this.octokit = new github.GitHub(token);
   }
 
+  initiateGraphQLClient(token) {
+    this.graphqlClient = graphql.defaults({
+      headers: {
+        authorization: `token ${token}`
+      }
+    });
+  }
+
+  /****************************** 
+   *  GraphQL Requests Methods  *
+  *******************************/
+  async requestOrgTeamsAndReposAndMembers(
+    organization,
+    teamsCursor = null,
+    repositoriesCursor = null,
+    membersCursor = null
+  ) {
+    const { organization: data } = await this.graphqlClient(
+      orgTeamsAndReposAndMembersQuery,
+      {
+        organization,
+        teamsCursor,
+        repositoriesCursor,
+        membersCursor
+      }
+    );
+
+    return data;
+  }
+
+  async requestOrgPullRequest(
+    organization,
+    isClosed,
+    creationPeriod
+  ) {
+    let queryBody = `org:${organization} is:pr archived:false created:${creationPeriod}`;
+    if (isClosed != null) {
+      queryBody = queryBody + " " + isClosed;
+    }
+    console.log(queryBody);
+    const data = await this.graphqlClient(
+      orgSearchAndCountQuery, {
+      q: queryBody
+    }
+    );
+    console.log(data);
+
+    return data;
+  }
+
+  async searchAndCountIssue(organization, query) {
+    let data;
+    try {
+      data = await this.graphqlClient(
+        orgSearchAndCountQuery,
+        {
+          q: query
+        }
+      );
+
+    } catch (error) {
+      core.info(error.message);
+      if (error.message === ERROR_MESSAGE_TOKEN_UNAUTHORIZED) {
+        core.info(
+          `⏸  The token you use isn't authorized to be used with ${organization}`
+        );
+        return null;
+      }
+    } finally {
+      if (!data) {
+        core.info(
+          `⏸  No data found for ${organization}, probably you don't have the right permission`
+        );
+        return;
+      }
+      return data.search.issueCount;
+    }
+  }
+
+  async requestOrgListRepoIssues(
+    organization,
+    repo,
+    issuesCursor = null,
+    states
+  ) {
+    const { organization: data } = await this.graphqlClient(
+      orgListRepoIssueQuery,
+      {
+        organization,
+        repo,
+        issuesCursor,
+        states
+      }
+    );
+    return data;
+  }
+
+  /****************************** 
+   *       Utils Methods        *
+  *******************************/
   async createIssue(body, issueTitle) {
-    console.log(this.options);
     const { data: issue_response } = await this.octokit.issues.create({
       owner: this.owner,
       repo: this.repo,
@@ -51949,12 +52008,382 @@ class GithubTools {
       await this.createIssue(body, reviewIssueTitle);
     }
   }
-}
 
+  async getIssue(issue_number) {
+    const { data: issue } = await this.octokit.issues.get({
+      owner: this.owner,
+      repo: this.repo,
+      issue_number,
+    });
+
+    return issue;
+  }
+
+  async getProjectId(project_name) {
+    let projectId;
+
+    const { data: projects } = await this.octokit.projects.listForRepo({
+      owner: this.owner,
+      repo: this.repo
+    });
+
+    projects.forEach(project => {
+      if (project.name == project_name) {
+        projectId = project.id
+      }
+    });
+
+    return projectId;
+  }
+
+  async listProjectColumns(project_id) {
+
+    const { data: projectColumns } = await this.octokit.projects.listColumns({
+      project_id,
+    });
+
+    return projectColumns;
+  }
+
+  async getColumnId(column_name, columns) {
+    let column_id;
+
+    columns.forEach(col => {
+      if (col.name == column_name) {
+        column_id = col.id;
+      }
+    });
+
+    return column_id;
+  }
+
+  async getColumn(column_id) {
+    const { data: column } = await this.octokit.projects.getColumn({
+      column_id,
+    });
+
+    return column;
+  }
+
+  async listCards(column_id) {
+    const { data: cards } = await this.octokit.projects.listCards({
+      column_id,
+    });
+
+    return cards;
+  }
+
+  /*
+    Count Issue in Kanban project.
+    If state param is not defined, opened and closed issue will be counted 
+    If creation param is not defined, issue will be counted regardless of the date of creation.
+  */
+  async countIssuesInColumn(project_name, column_name, issue_label, state) {
+
+    let issue_counter = 0;
+
+    var projectISMSId = await this.getProjectId(project_name);
+    var columns = await this.listProjectColumns(projectISMSId);
+    var column_id = await this.getColumnId(column_name, columns);
+    var cards = await this.listCards(column_id);
+
+    for (var card of cards) {
+      var issue = await this.getIssue(card.content_url.split('/').pop());
+      if (state != null) {
+        if (issue_label != null) {
+          issue.labels.forEach(label => { if (label.name == issue_label) issue_counter++; });
+        } else {
+          issue_counter++;
+        }
+      } else {
+        issue_counter++;
+      }
+    }
+
+    return issue_counter;
+
+  }
+
+  async listIssues(states) {
+    let data;
+    let result = [];
+    let issuesCursor = null;
+    let hasNextPage = true;
+
+    while (hasNextPage) {
+      try {
+        data = await this.requestOrgListRepoIssues(
+          this.organization,
+          this.repo,
+          issuesCursor,
+          states
+        );
+      } catch (error) {
+        core.info(error.message);
+        if (error.message === ERROR_MESSAGE_TOKEN_UNAUTHORIZED) {
+          core.info(
+            `⏸  The token you use isn't authorized to be used with ${this.organization}`
+          );
+          return null;
+        }
+      } finally {
+        if (!data) {
+          core.info(
+            `⏸  No data found for ${this.organization}, probably you don't have the right permission`
+          );
+          return;
+        }
+
+
+        hasNextPage = data.repository.issues.pageInfo.hasNextPage;
+        const currentPage = data.repository.issues.edges;
+        issuesCursor = data.repository.issues.pageInfo.endCursor;
+        result.push(...currentPage);
+      }
+    }
+
+    let list = [];
+    result.forEach(r => {
+      list.push(r.node);
+    });
+
+    return list;
+  }
+
+}
 module.exports = GithubTools;
 
 
 
+
+/***/ }),
+
+/***/ 9240:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const core = __nccwpck_require__(8864);
+const { graphql } = __nccwpck_require__(4170);
+const { promisify, format } = __nccwpck_require__(3837);
+const { JSONtoCSV, validateInput } = __nccwpck_require__(4727);
+const fs = __nccwpck_require__(7147);
+const dateFormat = __nccwpck_require__(6117);
+
+const Analyser = __nccwpck_require__(5462);
+const GithubTools = __nccwpck_require__(5430);
+
+const {
+  orgSearchAndCountQuery,
+} = __nccwpck_require__(2046);
+
+const { csvToMarkdown } = __nccwpck_require__(4447);
+
+const ERROR_MESSAGE_TOKEN_UNAUTHORIZED =
+  "Resource protected by organization SAML enforcement. You must grant your personal token access to this organization.";
+const ARTIFACT_FILE_NAME = "github-review";
+const DATA_FOLDER = "./data"
+
+class IndicatorsCollector {
+
+  constructor(token, organization, options) {
+    validateInput(organization, token);
+    this.token = token
+    this.organizations = [{ login: organization }]
+    this.options = options
+    this.indicators = new Object();
+
+    this.initiateGraphQLClient(token);
+    this.githubTools = new GithubTools(this.token, organization, this.options);
+  }
+
+  initiateGraphQLClient(token) {
+    this.graphqlClient = graphql.defaults({
+      headers: {
+        authorization: `token ${token}`
+      }
+    });
+  }
+
+  async collectSimpleIndicators(organization, creationPeriod) {
+    core.info(`Start Collecting Simple indicators`);
+
+    this.indicators.BUGS_OPEN = await this.githubTools.searchAndCountIssue(
+      organization,
+      `repo:fulll/superheroes is:issue label:bug created:${creationPeriod}`
+    );
+
+    this.indicators.BUGS_CLOSED = await this.githubTools.searchAndCountIssue(
+      organization,
+      `repo:fulll/superheroes is:issue label:bug closed:${creationPeriod}`
+    );
+
+    this.indicators.DEV_PULLS_OPEN = await this.githubTools.searchAndCountIssue(
+      organization,
+      `org:${organization} is:pr archived:false created:${creationPeriod}`
+    );
+
+    this.indicators.DEV_PULLS_CLOSED = await this.githubTools.searchAndCountIssue(
+      organization,
+      `org:${organization} is:pr is:closed archived:false created:${creationPeriod}`
+    );
+
+    this.indicators.SMSI_THIRD_FAILURE_COUNT = await this.githubTools.searchAndCountIssue(
+      organization,
+      `repo:${this.options.repository} is:issue is:open label:third created:${creationPeriod}`
+    );
+
+    this.indicators.SMSI_FAILURE_OPEN = await this.githubTools.searchAndCountIssue(
+      organization,
+      `repo:${this.options.repository} is:issue is:open label:failure created:${creationPeriod}`
+    );
+
+    this.indicators.SMSI_FAILURE_CRITICAL = await this.githubTools.searchAndCountIssue(
+      organization,
+      `repo:${this.options.repository} is:issue is:open label:failure label:critical created:${creationPeriod}`
+    );
+
+    core.info(`✅ Finishing Collecting Simple indicators`);
+  }
+
+  async collectComplexIndicators(organization, creationPeriod) {
+    core.info(`Start Collecting Complex indicators`);
+
+    console.log("SMSI_FAILURE_CLOSED");
+
+    this.indicators.SMSI_FAILURE_CLOSED =
+      await this.githubTools.searchAndCountIssue(
+        organization,
+        `repo:${this.options.repository} is:issue is:closed label:failure closed:${creationPeriod}`
+      )
+      +
+      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To validate', 'failure', 'open');
+
+    console.log("SMSI_FAILURE_PENDING");
+    this.indicators.SMSI_FAILURE_PENDING =
+      await this.githubTools.searchAndCountIssue(
+        organization,
+        `repo:${this.options.repository} is:issue is:open label:failure`
+      )
+      -
+      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To validate', 'failure', 'open');
+
+    console.log("SMSI_NC_COUNT");
+    this.indicators.SMSI_NC_COUNT =
+      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'In progress', 'bug', 'open') +
+      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'Current', 'bug', 'open') +
+      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To review', 'bug', 'open');
+
+    console.log("SMSI_OPP_COUNT");
+    this.indicators.SMSI_OPP_COUNT =
+      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'In progress', 'enhancement', 'open') +
+      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'Current', 'enhancement', 'open') +
+      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To review', 'enhancement', 'open');
+
+    core.info(`✅ Finishing Collecting Complex indicators`);
+  }
+
+  async collectHRIndicators(organization) {
+    core.info(`Start Collecting HR indicators`);
+
+    const hr_repo = 'fulll/service-rh';
+    const date = new Date();
+    const reviewPeriod = dateFormat.format(new Date(date.getFullYear(), date.getMonth() - 1, 1), 'yyyy-MM');
+    var githubToolsForRH = new GithubTools(this.token, organization, {
+      repository: hr_repo,
+    });
+
+    const hr_indicators = {
+      HR_EMPLOYEE_IN_AIX: 0,
+      HR_EMPLOYEE_OUT_AIX: 0,
+      HR_EMPLOYEE_IN_LYON: 0,
+      HR_EMPLOYEE_OUT_LYON: 0,
+      HR_EMPLOYEE_IN_ROUEN: 0,
+      HR_EMPLOYEE_OUT_ROUEN: 0
+    }
+
+    var issues = await githubToolsForRH.listIssues(['OPEN', 'CLOSED']);
+
+    for (var issue of issues) {
+      var extractDate = issue.title.substring(0, 12).split(/\D/g).filter(Number);
+
+      if (extractDate.length == 3) {
+        var issueDate = `${extractDate[0]}-${extractDate[1]}`;
+        if (issueDate == reviewPeriod) {
+          var issueLabels = []
+          issue.labels.edges.forEach(label => {
+            issueLabels.push(label.node.name);
+          });
+          if (issueLabels.includes('aix')) {
+            if (issueLabels.includes('entree')) hr_indicators.HR_EMPLOYEE_IN_AIX++;
+            if (issueLabels.includes('sortie')) hr_indicators.HR_EMPLOYEE_OUT_AIX++;
+          }
+          if (issueLabels.includes('lyon')) {
+            if (issueLabels.includes('entree')) hr_indicators.HR_EMPLOYEE_IN_LYON++;
+            if (issueLabels.includes('sortie')) hr_indicators.HR_EMPLOYEE_OUT_LYON++;
+          }
+          if (issueLabels.includes('rouen')) {
+            if (issueLabels.includes('entree')) hr_indicators.HR_EMPLOYEE_IN_ROUEN++;
+            if (issueLabels.includes('sortie')) hr_indicators.HR_EMPLOYEE_OUT_ROUEN++;
+          }
+        }
+      }
+    }
+
+    Object.assign(this.indicators, hr_indicators);
+
+    core.info(`✅ Finishing Collecting HR indicators`);
+  }
+
+  async startIndicatorsReview() {
+    try {
+      for (const { login } of this.organizations) {
+        core.startGroup(`🔍 Start collecting Indicators in organization ${login}.`);
+        let date = new Date();
+        let firstDayString = dateFormat.format(new Date(date.getFullYear(), date.getMonth() - 1, 1), 'yyyy-MM-dd');
+        let lastDayString = dateFormat.format(new Date(date.getFullYear(), date.getMonth(), 0), 'yyyy-MM-dd');
+        let creationPeriod = firstDayString + ".." + lastDayString;
+
+        core.info(`Review Period: ${creationPeriod}`);
+
+        await this.collectSimpleIndicators(login, creationPeriod);
+        await this.collectComplexIndicators(login, creationPeriod);
+        await this.collectHRIndicators(login);
+
+        if (this.indicators) {
+          core.info(
+            `✅ Finished collecting ISMS indicators for organization ${login}`
+          );
+          core.endGroup();
+        }
+
+        let indicators_json = []
+        Object.entries(this.indicators).forEach(([key, value]) => {
+          indicators_json.push({
+            indicators: key,
+            value: value
+          })
+        });
+
+        const indicators_csv = JSONtoCSV(indicators_json);
+
+        await writeFileAsync(
+          `${DATA_FOLDER}/${login}-ISMS-indicators.json`,
+          JSON.stringify(indicators_json)
+        );
+
+        await writeFileAsync(
+          `${DATA_FOLDER}/${login}-ISMS-indicators.csv`,
+          indicators_csv
+        );
+
+      }
+    } catch (error) {
+      console.log(error.message);
+    }
+  }
+
+}
+
+module.exports = IndicatorsCollector;
 
 /***/ }),
 
@@ -52098,11 +52527,40 @@ const queries = {
       }
     }
   }`,
-  orgPullRequestQuery: `
+  orgSearchAndCountQuery: `
   query($q: String!){
     search(query: $q , type: ISSUE, last: 100)   
     {
       issueCount
+    }
+  }`,
+  orgListRepoIssueQuery: `
+  query ($organization: String!, $repo: String!,$issuesCursor: String, $states: [IssueState!]) {
+    organization(login: $organization) {
+      repository(name: $repo) {
+        issues(first: 100 after: $issuesCursor, states: $states) {
+          edges {
+            node {
+              id
+              title
+              number
+              state
+              labels(first: 10) {
+                edges {
+                  node {
+                    name
+                  }
+                }
+              }
+            }
+          }
+          pageInfo {
+            startCursor
+            hasNextPage
+            endCursor
+          }
+        }
+      }
     }
   }`
 };
@@ -52132,8 +52590,18 @@ function JSONtoCSV(json) {
   return csv;
 }
 
+function validateInput(organization, token) {
+  if (!organization || !token) {
+    core.setFailed(
+      "The organization or token parameter are not defined."
+    );
+    process.exit();
+  }
+}
+
 module.exports = {
-  JSONtoCSV
+  JSONtoCSV,
+  validateInput
 };
 
 
@@ -52326,6 +52794,7 @@ var __webpack_exports__ = {};
 (() => {
 const core = __nccwpck_require__(8864);
 const OrgDataCollector = __nccwpck_require__(3350);
+const IndicatorsCollector = __nccwpck_require__(9240);
 
 const DEFAULT_ISSUE_TITLE = "Github Organization Review";
 const DEFAULT_ISSUE_LABELS = ["check"]
@@ -52334,15 +52803,23 @@ const main = async () => {
   const token = core.getInput("token") || process.env.TOKEN;
   const organization =
     core.getInput("organization") || process.env.ORGANIZATION;
-  const Collector = new OrgDataCollector(token, organization, {
-    repository: process.env.GITHUB_REPOSITORY,
-    postToIssue: core.getInput("postToIssue") || process.env.ISSUE,
-    issueTitle: core.getInput("issueTitle") || DEFAULT_ISSUE_TITLE,
-    labels: core.getInput("labels").split(",") || DEFAULT_ISSUE_LABELS,
-    assignees: core.getInput("assignees").split(",") || [""]
-  });
+  const reviewType = core.getInput("review") || process.env.REVIEW
 
-  await Collector.startOrgReview();
+  if (reviewType == "members") {
+    await new OrgDataCollector(token, organization, {
+      repository: process.env.GITHUB_REPOSITORY,
+      postToIssue: core.getInput("postToIssue") || process.env.ISSUE,
+      issueTitle: core.getInput("issueTitle") || DEFAULT_ISSUE_TITLE,
+      labels: core.getInput("labels").split(",") || DEFAULT_ISSUE_LABELS,
+      assignees: core.getInput("assignees").split(",") || [""]
+    }).startOrgReview();
+  } else if (reviewType == "indicators") {
+    await new IndicatorsCollector(token, organization, {
+      repository: process.env.GITHUB_REPOSITORY,
+    }).startIndicatorsReview();
+  } else {
+    core.info('review is not set in workflow');
+  }
 };
 
 try {

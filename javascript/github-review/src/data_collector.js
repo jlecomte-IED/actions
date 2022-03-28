@@ -1,5 +1,4 @@
 const core = require("@actions/core");
-const { graphql } = require("@octokit/graphql");
 const { promisify, format } = require("util");
 const { JSONtoCSV } = require("./utils");
 const fs = require("fs");
@@ -7,10 +6,6 @@ const dateFormat = require("date-fns");
 
 const Analyser = require("./analyser");
 const GithubTools = require("./github_tools");
-const {
-  orgTeamsAndReposAndMembersQuery,
-  orgPullRequestQuery,
-} = require("./queries");
 const { csvToMarkdown } = require("csv-to-markdown-table/lib/CsvToMarkdown");
 
 
@@ -32,6 +27,7 @@ class OrgDataCollector {
     this.result = {};
     this.orgNormalizedData = [];
     this.pullRequestData = {};
+    this.indicators = new Object();
     this.lastTrackedTeam = null;
 
     this.initiateGraphQLClient(token);
@@ -48,57 +44,10 @@ class OrgDataCollector {
     }
   }
 
-  initiateGraphQLClient(token) {
-    this.graphqlClient = graphql.defaults({
-      headers: {
-        authorization: `token ${token}`
-      }
-    });
-  }
-
-  async requestOrgTeamsAndReposAndMembers(
-    organization,
-    teamsCursor = null,
-    repositoriesCursor = null,
-    membersCursor = null
-  ) {
-    const { organization: data } = await this.graphqlClient(
-      orgTeamsAndReposAndMembersQuery,
-      {
-        organization,
-        teamsCursor,
-        repositoriesCursor,
-        membersCursor
-      }
-    );
-
-    return data;
-  }
-
-  async requestOrgPullRequest(
-    organization,
-    isClosed,
-    creationPeriod
-  ) {
-    let queryBody = `org:${organization} is:pr archived:false created:${creationPeriod}`;
-    if (isClosed != null) {
-      queryBody = queryBody + " " + isClosed;
-    }
-    console.log(queryBody);
-    const data = await this.graphqlClient(
-      orgPullRequestQuery, {
-      q: queryBody
-    }
-    );
-    console.log(data);
-
-    return data;
-  }
-
   async getPullRequestCount(organization, isClosed, creationPeriod) {
     let data;
     try {
-      data = await this.requestOrgPullRequest(
+      data = await this.githubTools.requestOrgPullRequest(
         organization,
         isClosed,
         creationPeriod
@@ -126,7 +75,7 @@ class OrgDataCollector {
   async collectTeamsData(organization, teamsCursor, repositoriesCursor, membersCursor) {
     let data;
     try {
-      data = await this.requestOrgTeamsAndReposAndMembers(
+      data = await this.githubTools.requestOrgTeamsAndReposAndMembers(
         organization,
         teamsCursor,
         repositoriesCursor,
@@ -271,7 +220,7 @@ class OrgDataCollector {
     this.pullRequestData.prClosed = nbPullResquestClosed;
   }
 
-  async startOrgReview() {
+  async startOrgReview(organization) {
     try {
       for (const { login } of this.organizations) {
         core.startGroup(`🔍 Start collecting for organization ${login}.`);
@@ -331,11 +280,11 @@ class OrgDataCollector {
     if (!result_json.length) {
       return core.setFailed(`⚠️  No data collected. Stopping action`);
     }
-    
+
     /**********************************
     *** Create Artifact CSV and JSON ***
     **********************************/
-   const json_filePath = `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}-${dateFormat.format(new Date(), 'yyyy-MM-dd')}.json`
+    const json_filePath = `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}-${dateFormat.format(new Date(), 'yyyy-MM-dd')}.json`
 
     await writeFileAsync(
       json_filePath,
@@ -350,18 +299,18 @@ class OrgDataCollector {
     await this.analyser.startAnalysis();
 
     // Posting review
-    await this.postingReview();
+    await this.postingOrgReview();
 
     process.exit();
   }
 
-  async postingReview() {
+  async postingOrgReview() {
     if (!this.options.postToIssue) {
       return core.debug("skipping posting review in issue");
     }
 
     let body;
-  
+
     await this.githubTools.findReviewIssue();
 
     //Posting result comment
