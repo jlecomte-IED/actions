@@ -52168,19 +52168,19 @@ const { JSONtoCSV, validateInput } = __nccwpck_require__(4727);
 const fs = __nccwpck_require__(7147);
 const dateFormat = __nccwpck_require__(6117);
 
-const Analyser = __nccwpck_require__(5462);
 const GithubTools = __nccwpck_require__(5430);
 
 const {
   orgSearchAndCountQuery,
 } = __nccwpck_require__(2046);
 
-const { csvToMarkdown } = __nccwpck_require__(4447);
-
 const ERROR_MESSAGE_TOKEN_UNAUTHORIZED =
   "Resource protected by organization SAML enforcement. You must grant your personal token access to this organization.";
 const ARTIFACT_FILE_NAME = "ISMS-indicators";
 const DATA_FOLDER = "./data"
+
+const writeFileAsync = promisify(fs.writeFile);
+!fs.existsSync(DATA_FOLDER) && fs.mkdirSync(DATA_FOLDER);
 
 class IndicatorsCollector {
 
