@@ -16,7 +16,7 @@ const { csvToMarkdown } = require("csv-to-markdown-table/lib/CsvToMarkdown");
 
 const ERROR_MESSAGE_TOKEN_UNAUTHORIZED =
   "Resource protected by organization SAML enforcement. You must grant your personal token access to this organization.";
-const ARTIFACT_FILE_NAME = "github-review";
+const ARTIFACT_FILE_NAME = "ISMS-indicators";
 const DATA_FOLDER = "./data"
 
 class IndicatorsCollector {
@@ -192,7 +192,7 @@ class IndicatorsCollector {
           core.endGroup();
         }
 
-        let indicators_json = []
+        const indicators_json = []
         Object.entries(this.indicators).forEach(([key, value]) => {
           indicators_json.push({
             indicators: key,
@@ -202,16 +202,24 @@ class IndicatorsCollector {
 
         const indicators_csv = JSONtoCSV(indicators_json);
 
+        const file_path = `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}-${dateFormat.format(new Date(), 'yyyy-MM-dd')}`
+
         await writeFileAsync(
-          `${DATA_FOLDER}/${login}-ISMS-indicators.json`,
+          `${file_path}.json`,
           JSON.stringify(indicators_json)
         );
 
         await writeFileAsync(
-          `${DATA_FOLDER}/${login}-ISMS-indicators.csv`,
+          `${file_path}.csv`,
           indicators_csv
         );
 
+        await this.githubTools.createandUploadArtifacts([
+          `${file_path}.csv`,
+          `${file_path}.json`
+        ]);
+
+        process.exit();
       }
     } catch (error) {
       console.log(error.message);
