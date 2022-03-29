@@ -5,19 +5,19 @@ const { JSONtoCSV, validateInput } = require("./utils");
 const fs = require("fs");
 const dateFormat = require("date-fns");
 
-const Analyser = require("./analyser");
 const GithubTools = require("./github_tools");
 
 const {
   orgSearchAndCountQuery,
 } = require("./queries");
 
-const { csvToMarkdown } = require("csv-to-markdown-table/lib/CsvToMarkdown");
-
 const ERROR_MESSAGE_TOKEN_UNAUTHORIZED =
   "Resource protected by organization SAML enforcement. You must grant your personal token access to this organization.";
 const ARTIFACT_FILE_NAME = "ISMS-indicators";
 const DATA_FOLDER = "./data"
+
+const writeFileAsync = promisify(fs.writeFile);
+!fs.existsSync(DATA_FOLDER) && fs.mkdirSync(DATA_FOLDER);
 
 class IndicatorsCollector {
 
