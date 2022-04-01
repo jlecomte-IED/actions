@@ -7,10 +7,6 @@ const dateFormat = require("date-fns");
 
 const GithubTools = require("./github_tools");
 
-const {
-  orgSearchAndCountQuery,
-} = require("./queries");
-
 const ERROR_MESSAGE_TOKEN_UNAUTHORIZED =
   "Resource protected by organization SAML enforcement. You must grant your personal token access to this organization.";
 const ARTIFACT_FILE_NAME = "ISMS-indicators";
@@ -27,17 +23,7 @@ class IndicatorsCollector {
     this.organizations = [{ login: organization }]
     this.options = options
     this.indicators = new Object();
-
-    this.initiateGraphQLClient(token);
     this.githubTools = new GithubTools(this.token, organization, this.options);
-  }
-
-  initiateGraphQLClient(token) {
-    this.graphqlClient = graphql.defaults({
-      headers: {
-        authorization: `token ${token}`
-      }
-    });
   }
 
   async collectSimpleIndicators(organization, creationPeriod) {
