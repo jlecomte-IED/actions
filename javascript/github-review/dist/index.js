@@ -51473,7 +51473,7 @@ class OrgDataCollector {
     this.indicators = new Object();
     this.lastTrackedTeam = null;
 
-    this.initiateGraphQLClient(token);
+    
     this.githubTools = new GithubTools(token, organization, this.options);
     this.analyser = new Analyser(this.orgNormalizedData);
   }
@@ -52170,10 +52170,6 @@ const dateFormat = __nccwpck_require__(6117);
 
 const GithubTools = __nccwpck_require__(5430);
 
-const {
-  orgSearchAndCountQuery,
-} = __nccwpck_require__(2046);
-
 const ERROR_MESSAGE_TOKEN_UNAUTHORIZED =
   "Resource protected by organization SAML enforcement. You must grant your personal token access to this organization.";
 const ARTIFACT_FILE_NAME = "ISMS-indicators";
@@ -52190,17 +52186,7 @@ class IndicatorsCollector {
     this.organizations = [{ login: organization }]
     this.options = options
     this.indicators = new Object();
-
-    this.initiateGraphQLClient(token);
     this.githubTools = new GithubTools(this.token, organization, this.options);
-  }
-
-  initiateGraphQLClient(token) {
-    this.graphqlClient = graphql.defaults({
-      headers: {
-        authorization: `token ${token}`
-      }
-    });
   }
 
   async collectSimpleIndicators(organization, creationPeriod) {
