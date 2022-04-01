@@ -30,7 +30,7 @@ class OrgDataCollector {
     this.indicators = new Object();
     this.lastTrackedTeam = null;
 
-    this.initiateGraphQLClient(token);
+    
     this.githubTools = new GithubTools(token, organization, this.options);
     this.analyser = new Analyser(this.orgNormalizedData);
   }

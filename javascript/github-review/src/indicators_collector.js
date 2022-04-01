@@ -27,17 +27,7 @@ class IndicatorsCollector {
     this.organizations = [{ login: organization }]
     this.options = options
     this.indicators = new Object();
-
-    this.initiateGraphQLClient(token);
     this.githubTools = new GithubTools(this.token, organization, this.options);
-  }
-
-  initiateGraphQLClient(token) {
-    this.graphqlClient = graphql.defaults({
-      headers: {
-        authorization: `token ${token}`
-      }
-    });
   }
 
   async collectSimpleIndicators(organization, creationPeriod) {
