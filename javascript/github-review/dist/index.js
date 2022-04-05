@@ -51792,10 +51792,11 @@ const csvToMarkdown = __nccwpck_require__(4447);
 const github = __nccwpck_require__(6366);
 const dateFormat = __nccwpck_require__(6117);
 const { graphql } = __nccwpck_require__(4170);
+
 const {
   orgTeamsAndReposAndMembersQuery,
   orgSearchAndCountQuery,
-  orgListRepoIssueQuery
+  orgListRepoIssueQuery,
 } = __nccwpck_require__(2046);
 
 const ERROR_MESSAGE_TOKEN_UNAUTHORIZED =
@@ -51914,6 +51915,14 @@ class GithubTools {
       }
     );
     return data;
+  }
+
+  async requestProjectListCards(
+    organization,
+    repo,
+    column_id
+  ) {
+
   }
 
   /****************************** 
@@ -52066,11 +52075,12 @@ class GithubTools {
   }
 
   async listCards(column_id) {
-    const { data: cards } = await this.octokit.projects.listCards({
-      column_id,
-    });
+    const result = await this.octokit.paginate('GET /projects/columns/{column_id}/cards',
+      {
+        column_id
+      });
 
-    return cards;
+    return result;
   }
 
   /*
@@ -52078,8 +52088,7 @@ class GithubTools {
     If state param is not defined, opened and closed issue will be counted 
     If creation param is not defined, issue will be counted regardless of the date of creation.
   */
-  async countIssuesInColumn(project_name, column_name, issue_label, state) {
-
+  async countIssuesInColumn(project_name, column_name, state, ...labels) {
     let issue_counter = 0;
 
     var projectISMSId = await this.getProjectId(project_name);
@@ -52090,8 +52099,13 @@ class GithubTools {
     for (var card of cards) {
       var issue = await this.getIssue(card.content_url.split('/').pop());
       if (state != null) {
-        if (issue_label != null) {
-          issue.labels.forEach(label => { if (label.name == issue_label) issue_counter++; });
+        if (labels != null) {
+          var issueLabels = []
+          issue.labels.forEach(label => {
+            issueLabels.push(label.name);
+          });
+
+          if (labels.every(i => issueLabels.includes(i))) issue_counter++;
         } else {
           issue_counter++;
         }
@@ -52099,55 +52113,17 @@ class GithubTools {
         issue_counter++;
       }
     }
-
     return issue_counter;
-
   }
 
-  async listIssues(states) {
-    let data;
-    let result = [];
-    let issuesCursor = null;
-    let hasNextPage = true;
-
-    while (hasNextPage) {
-      try {
-        data = await this.requestOrgListRepoIssues(
-          this.organization,
-          this.repo,
-          issuesCursor,
-          states
-        );
-      } catch (error) {
-        core.info(error.message);
-        if (error.message === ERROR_MESSAGE_TOKEN_UNAUTHORIZED) {
-          core.info(
-            `⏸  The token you use isn't authorized to be used with ${this.organization}`
-          );
-          return null;
-        }
-      } finally {
-        if (!data) {
-          core.info(
-            `⏸  No data found for ${this.organization}, probably you don't have the right permission`
-          );
-          return;
-        }
-
-
-        hasNextPage = data.repository.issues.pageInfo.hasNextPage;
-        const currentPage = data.repository.issues.edges;
-        issuesCursor = data.repository.issues.pageInfo.endCursor;
-        result.push(...currentPage);
-      }
-    }
-
-    let list = [];
-    result.forEach(r => {
-      list.push(r.node);
-    });
-
-    return list;
+  async listRepoIssues(state) {
+    const result = await this.octokit.paginate('GET /repos/{owner}/{repo}/issues',
+      {
+        owner: this.organization,
+        repo: this.repo,
+        state,
+      });
+    return result;
   }
 
 }
@@ -52190,7 +52166,7 @@ class IndicatorsCollector {
   }
 
   async collectSimpleIndicators(organization, creationPeriod) {
-    core.info(`Start Collecting Simple indicators`);
+    core.info(`🔍 Start Collecting Simple indicators`);
 
     this.indicators.BUGS_OPEN = await this.githubTools.searchAndCountIssue(
       organization,
@@ -52209,7 +52185,7 @@ class IndicatorsCollector {
 
     this.indicators.DEV_PULLS_CLOSED = await this.githubTools.searchAndCountIssue(
       organization,
-      `org:${organization} is:pr is:closed archived:false created:${creationPeriod}`
+      `org:${organization} is:pr is:closed archived:false closed:${creationPeriod}`
     );
 
     this.indicators.SMSI_THIRD_FAILURE_COUNT = await this.githubTools.searchAndCountIssue(
@@ -52219,56 +52195,56 @@ class IndicatorsCollector {
 
     this.indicators.SMSI_FAILURE_OPEN = await this.githubTools.searchAndCountIssue(
       organization,
-      `repo:${this.options.repository} is:issue is:open label:failure created:${creationPeriod}`
+      `repo:${this.options.repository} is:issue label:failure created:${creationPeriod}`
     );
-
-    this.indicators.SMSI_FAILURE_CRITICAL = await this.githubTools.searchAndCountIssue(
-      organization,
-      `repo:${this.options.repository} is:issue is:open label:failure label:critical created:${creationPeriod}`
-    );
-
-    core.info(`✅ Finishing Collecting Simple indicators`);
-  }
-
-  async collectComplexIndicators(organization, creationPeriod) {
-    core.info(`Start Collecting Complex indicators`);
-
-    console.log("SMSI_FAILURE_CLOSED");
 
     this.indicators.SMSI_FAILURE_CLOSED =
       await this.githubTools.searchAndCountIssue(
         organization,
         `repo:${this.options.repository} is:issue is:closed label:failure closed:${creationPeriod}`
-      )
-      +
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To validate', 'failure', 'open');
+      );
 
-    console.log("SMSI_FAILURE_PENDING");
+    core.info(`✅ Finishing Collecting Simple indicators`);
+  }
+
+  async collectComplexIndicators(organization, creationPeriod) {
+    core.info(`🔍 Start Collecting Complex indicators`);
+
+    this.indicators.SMSI_FAILURE_CRITICAL = await this.githubTools.searchAndCountIssue(
+      organization,
+      `repo:${this.options.repository} is:issue is:open label:failure label:critical`
+    ) - await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To validate', 'open', 'failure', 'critical');
+
+    core.info("Getting SMSI_FAILURE_PENDING ...");
     this.indicators.SMSI_FAILURE_PENDING =
       await this.githubTools.searchAndCountIssue(
         organization,
         `repo:${this.options.repository} is:issue is:open label:failure`
       )
       -
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To validate', 'failure', 'open');
+      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To validate', 'open', 'failure');
 
-    console.log("SMSI_NC_COUNT");
+    core.info("Getting SMSI_FAILURE_TO_VALIDATE ...");
+    this.indicators.SMSI_FAILURE_TO_VALIDATE = await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To validate', 'open', 'failure');
+
+
+    core.info("Getting SMSI_NC_COUNT ...");
     this.indicators.SMSI_NC_COUNT =
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'In progress', 'bug', 'open') +
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'Current', 'bug', 'open') +
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To review', 'bug', 'open');
+      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'In progress', 'open', 'bug') +
+      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'Current', 'open', 'bug') +
+      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To review', 'open', 'bug');
 
-    console.log("SMSI_OPP_COUNT");
+      core.info("Getting SMSI_OPP_COUNT ...");
     this.indicators.SMSI_OPP_COUNT =
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'In progress', 'enhancement', 'open') +
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'Current', 'enhancement', 'open') +
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To review', 'enhancement', 'open');
+      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'In progress', 'open', 'enhancement') +
+      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'Current', 'open', 'enhancement') +
+      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To review', 'open', 'enhancement');
 
     core.info(`✅ Finishing Collecting Complex indicators`);
   }
 
   async collectHRIndicators(organization) {
-    core.info(`Start Collecting HR indicators`);
+    core.info(`🔍 Start Collecting HR indicators`);
 
     const hr_repo = 'fulll/service-rh';
     const date = new Date();
@@ -52283,10 +52259,16 @@ class IndicatorsCollector {
       HR_EMPLOYEE_IN_LYON: 0,
       HR_EMPLOYEE_OUT_LYON: 0,
       HR_EMPLOYEE_IN_ROUEN: 0,
-      HR_EMPLOYEE_OUT_ROUEN: 0
+      HR_EMPLOYEE_OUT_ROUEN: 0,
+      HR_INTERN_IN_AIX: 0,
+      HR_INTERN_OUT_AIX: 0,
+      HR_INTERN_IN_LYON: 0,
+      HR_INTERN_OUT_LYON: 0,
+      HR_INTERN_IN_ROUEN: 0,
+      HR_INTERN_OUT_ROUEN: 0
     }
 
-    var issues = await githubToolsForRH.listIssues(['OPEN', 'CLOSED']);
+    var issues = await githubToolsForRH.listRepoIssues('all');
 
     for (var issue of issues) {
       var extractDate = issue.title.substring(0, 12).split(/\D/g).filter(Number);
@@ -52295,20 +52277,35 @@ class IndicatorsCollector {
         var issueDate = `${extractDate[0]}-${extractDate[1]}`;
         if (issueDate == reviewPeriod) {
           var issueLabels = []
-          issue.labels.edges.forEach(label => {
-            issueLabels.push(label.node.name);
+          issue.labels.forEach(label => {
+            issueLabels.push(label.name);
           });
-          if (issueLabels.includes('aix')) {
-            if (issueLabels.includes('entree')) hr_indicators.HR_EMPLOYEE_IN_AIX++;
-            if (issueLabels.includes('sortie')) hr_indicators.HR_EMPLOYEE_OUT_AIX++;
-          }
-          if (issueLabels.includes('lyon')) {
-            if (issueLabels.includes('entree')) hr_indicators.HR_EMPLOYEE_IN_LYON++;
-            if (issueLabels.includes('sortie')) hr_indicators.HR_EMPLOYEE_OUT_LYON++;
-          }
-          if (issueLabels.includes('rouen')) {
-            if (issueLabels.includes('entree')) hr_indicators.HR_EMPLOYEE_IN_ROUEN++;
-            if (issueLabels.includes('sortie')) hr_indicators.HR_EMPLOYEE_OUT_ROUEN++;
+          if (!issueLabels.includes('intern')) {
+            if (issueLabels.includes('aix')) {
+              if (issueLabels.includes('entree')) hr_indicators.HR_EMPLOYEE_IN_AIX++;
+              if (issueLabels.includes('sortie')) hr_indicators.HR_EMPLOYEE_OUT_AIX++;
+            }
+            if (issueLabels.includes('lyon')) {
+              if (issueLabels.includes('entree')) hr_indicators.HR_EMPLOYEE_IN_LYON++;
+              if (issueLabels.includes('sortie')) hr_indicators.HR_EMPLOYEE_OUT_LYON++;
+            }
+            if (issueLabels.includes('rouen')) {
+              if (issueLabels.includes('entree')) hr_indicators.HR_EMPLOYEE_IN_ROUEN++;
+              if (issueLabels.includes('sortie')) hr_indicators.HR_EMPLOYEE_OUT_ROUEN++;
+            }
+          } else {
+            if (issueLabels.includes('aix')) {
+              if (issueLabels.includes('entree')) hr_indicators.HR_INTERN_IN_AIX++;
+              if (issueLabels.includes('sortie')) hr_indicators.HR_INTERN_OUT_AIX++;
+            }
+            if (issueLabels.includes('lyon')) {
+              if (issueLabels.includes('entree')) hr_indicators.HR_INTERN_IN_LYON++;
+              if (issueLabels.includes('sortie')) hr_indicators.HR_INTERN_OUT_LYON++;
+            }
+            if (issueLabels.includes('rouen')) {
+              if (issueLabels.includes('entree')) hr_indicators.HR_INTERN_IN_ROUEN++;
+              if (issueLabels.includes('sortie')) hr_indicators.HR_INTERN_OUT_ROUEN++;
+            }
           }
         }
       }
