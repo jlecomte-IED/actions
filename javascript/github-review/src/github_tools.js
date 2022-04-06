@@ -4,10 +4,11 @@ const csvToMarkdown = require("csv-to-markdown-table");
 const github = require("@actions/github");
 const dateFormat = require("date-fns");
 const { graphql } = require("@octokit/graphql");
+
 const {
   orgTeamsAndReposAndMembersQuery,
   orgSearchAndCountQuery,
-  orgListRepoIssueQuery
+  orgListRepoIssueQuery,
 } = require("./queries");
 
 const ERROR_MESSAGE_TOKEN_UNAUTHORIZED =
@@ -126,6 +127,14 @@ class GithubTools {
       }
     );
     return data;
+  }
+
+  async requestProjectListCards(
+    organization,
+    repo,
+    column_id
+  ) {
+
   }
 
   /****************************** 
@@ -278,11 +287,12 @@ class GithubTools {
   }
 
   async listCards(column_id) {
-    const { data: cards } = await this.octokit.projects.listCards({
-      column_id,
-    });
+    const result = await this.octokit.paginate('GET /projects/columns/{column_id}/cards',
+      {
+        column_id
+      });
 
-    return cards;
+    return result;
   }
 
   /*
@@ -290,8 +300,7 @@ class GithubTools {
     If state param is not defined, opened and closed issue will be counted 
     If creation param is not defined, issue will be counted regardless of the date of creation.
   */
-  async countIssuesInColumn(project_name, column_name, issue_label, state) {
-
+  async countIssuesInColumn(project_name, column_name, state, ...labels) {
     let issue_counter = 0;
 
     var projectISMSId = await this.getProjectId(project_name);
@@ -302,8 +311,13 @@ class GithubTools {
     for (var card of cards) {
       var issue = await this.getIssue(card.content_url.split('/').pop());
       if (state != null) {
-        if (issue_label != null) {
-          issue.labels.forEach(label => { if (label.name == issue_label) issue_counter++; });
+        if (labels != null) {
+          var issueLabels = []
+          issue.labels.forEach(label => {
+            issueLabels.push(label.name);
+          });
+
+          if (labels.every(i => issueLabels.includes(i))) issue_counter++;
         } else {
           issue_counter++;
         }
@@ -311,55 +325,17 @@ class GithubTools {
         issue_counter++;
       }
     }
-
     return issue_counter;
-
   }
 
-  async listIssues(states) {
-    let data;
-    let result = [];
-    let issuesCursor = null;
-    let hasNextPage = true;
-
-    while (hasNextPage) {
-      try {
-        data = await this.requestOrgListRepoIssues(
-          this.organization,
-          this.repo,
-          issuesCursor,
-          states
-        );
-      } catch (error) {
-        core.info(error.message);
-        if (error.message === ERROR_MESSAGE_TOKEN_UNAUTHORIZED) {
-          core.info(
-            `⏸  The token you use isn't authorized to be used with ${this.organization}`
-          );
-          return null;
-        }
-      } finally {
-        if (!data) {
-          core.info(
-            `⏸  No data found for ${this.organization}, probably you don't have the right permission`
-          );
-          return;
-        }
-
-
-        hasNextPage = data.repository.issues.pageInfo.hasNextPage;
-        const currentPage = data.repository.issues.edges;
-        issuesCursor = data.repository.issues.pageInfo.endCursor;
-        result.push(...currentPage);
-      }
-    }
-
-    let list = [];
-    result.forEach(r => {
-      list.push(r.node);
-    });
-
-    return list;
+  async listRepoIssues(state) {
+    const result = await this.octokit.paginate('GET /repos/{owner}/{repo}/issues',
+      {
+        owner: this.organization,
+        repo: this.repo,
+        state,
+      });
+    return result;
   }
 
 }

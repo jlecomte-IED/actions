@@ -27,7 +27,7 @@ class IndicatorsCollector {
   }
 
   async collectSimpleIndicators(organization, creationPeriod) {
-    core.info(`Start Collecting Simple indicators`);
+    core.info(`🔍 Start Collecting Simple indicators`);
 
     this.indicators.BUGS_OPEN = await this.githubTools.searchAndCountIssue(
       organization,
@@ -46,7 +46,7 @@ class IndicatorsCollector {
 
     this.indicators.DEV_PULLS_CLOSED = await this.githubTools.searchAndCountIssue(
       organization,
-      `org:${organization} is:pr is:closed archived:false created:${creationPeriod}`
+      `org:${organization} is:pr is:closed archived:false closed:${creationPeriod}`
     );
 
     this.indicators.SMSI_THIRD_FAILURE_COUNT = await this.githubTools.searchAndCountIssue(
@@ -56,56 +56,56 @@ class IndicatorsCollector {
 
     this.indicators.SMSI_FAILURE_OPEN = await this.githubTools.searchAndCountIssue(
       organization,
-      `repo:${this.options.repository} is:issue is:open label:failure created:${creationPeriod}`
+      `repo:${this.options.repository} is:issue label:failure created:${creationPeriod}`
     );
-
-    this.indicators.SMSI_FAILURE_CRITICAL = await this.githubTools.searchAndCountIssue(
-      organization,
-      `repo:${this.options.repository} is:issue is:open label:failure label:critical created:${creationPeriod}`
-    );
-
-    core.info(`✅ Finishing Collecting Simple indicators`);
-  }
-
-  async collectComplexIndicators(organization, creationPeriod) {
-    core.info(`Start Collecting Complex indicators`);
-
-    console.log("SMSI_FAILURE_CLOSED");
 
     this.indicators.SMSI_FAILURE_CLOSED =
       await this.githubTools.searchAndCountIssue(
         organization,
         `repo:${this.options.repository} is:issue is:closed label:failure closed:${creationPeriod}`
-      )
-      +
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To validate', 'failure', 'open');
+      );
 
-    console.log("SMSI_FAILURE_PENDING");
+    core.info(`✅ Finishing Collecting Simple indicators`);
+  }
+
+  async collectComplexIndicators(organization, creationPeriod) {
+    core.info(`🔍 Start Collecting Complex indicators`);
+
+    this.indicators.SMSI_FAILURE_CRITICAL = await this.githubTools.searchAndCountIssue(
+      organization,
+      `repo:${this.options.repository} is:issue is:open label:failure label:critical`
+    ) - await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To validate', 'open', 'failure', 'critical');
+
+    core.info("Getting SMSI_FAILURE_PENDING ...");
     this.indicators.SMSI_FAILURE_PENDING =
       await this.githubTools.searchAndCountIssue(
         organization,
         `repo:${this.options.repository} is:issue is:open label:failure`
       )
       -
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To validate', 'failure', 'open');
+      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To validate', 'open', 'failure');
 
-    console.log("SMSI_NC_COUNT");
+    core.info("Getting SMSI_FAILURE_TO_VALIDATE ...");
+    this.indicators.SMSI_FAILURE_TO_VALIDATE = await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To validate', 'open', 'failure');
+
+
+    core.info("Getting SMSI_NC_COUNT ...");
     this.indicators.SMSI_NC_COUNT =
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'In progress', 'bug', 'open') +
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'Current', 'bug', 'open') +
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To review', 'bug', 'open');
+      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'In progress', 'open', 'bug') +
+      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'Current', 'open', 'bug') +
+      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To review', 'open', 'bug');
 
-    console.log("SMSI_OPP_COUNT");
+      core.info("Getting SMSI_OPP_COUNT ...");
     this.indicators.SMSI_OPP_COUNT =
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'In progress', 'enhancement', 'open') +
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'Current', 'enhancement', 'open') +
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To review', 'enhancement', 'open');
+      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'In progress', 'open', 'enhancement') +
+      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'Current', 'open', 'enhancement') +
+      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To review', 'open', 'enhancement');
 
     core.info(`✅ Finishing Collecting Complex indicators`);
   }
 
   async collectHRIndicators(organization) {
-    core.info(`Start Collecting HR indicators`);
+    core.info(`🔍 Start Collecting HR indicators`);
 
     const hr_repo = 'fulll/service-rh';
     const date = new Date();
@@ -120,10 +120,16 @@ class IndicatorsCollector {
       HR_EMPLOYEE_IN_LYON: 0,
       HR_EMPLOYEE_OUT_LYON: 0,
       HR_EMPLOYEE_IN_ROUEN: 0,
-      HR_EMPLOYEE_OUT_ROUEN: 0
+      HR_EMPLOYEE_OUT_ROUEN: 0,
+      HR_INTERN_IN_AIX: 0,
+      HR_INTERN_OUT_AIX: 0,
+      HR_INTERN_IN_LYON: 0,
+      HR_INTERN_OUT_LYON: 0,
+      HR_INTERN_IN_ROUEN: 0,
+      HR_INTERN_OUT_ROUEN: 0
     }
 
-    var issues = await githubToolsForRH.listIssues(['OPEN', 'CLOSED']);
+    var issues = await githubToolsForRH.listRepoIssues('all');
 
     for (var issue of issues) {
       var extractDate = issue.title.substring(0, 12).split(/\D/g).filter(Number);
@@ -132,20 +138,35 @@ class IndicatorsCollector {
         var issueDate = `${extractDate[0]}-${extractDate[1]}`;
         if (issueDate == reviewPeriod) {
           var issueLabels = []
-          issue.labels.edges.forEach(label => {
-            issueLabels.push(label.node.name);
+          issue.labels.forEach(label => {
+            issueLabels.push(label.name);
           });
-          if (issueLabels.includes('aix')) {
-            if (issueLabels.includes('entree')) hr_indicators.HR_EMPLOYEE_IN_AIX++;
-            if (issueLabels.includes('sortie')) hr_indicators.HR_EMPLOYEE_OUT_AIX++;
-          }
-          if (issueLabels.includes('lyon')) {
-            if (issueLabels.includes('entree')) hr_indicators.HR_EMPLOYEE_IN_LYON++;
-            if (issueLabels.includes('sortie')) hr_indicators.HR_EMPLOYEE_OUT_LYON++;
-          }
-          if (issueLabels.includes('rouen')) {
-            if (issueLabels.includes('entree')) hr_indicators.HR_EMPLOYEE_IN_ROUEN++;
-            if (issueLabels.includes('sortie')) hr_indicators.HR_EMPLOYEE_OUT_ROUEN++;
+          if (!issueLabels.includes('intern')) {
+            if (issueLabels.includes('aix')) {
+              if (issueLabels.includes('entree')) hr_indicators.HR_EMPLOYEE_IN_AIX++;
+              if (issueLabels.includes('sortie')) hr_indicators.HR_EMPLOYEE_OUT_AIX++;
+            }
+            if (issueLabels.includes('lyon')) {
+              if (issueLabels.includes('entree')) hr_indicators.HR_EMPLOYEE_IN_LYON++;
+              if (issueLabels.includes('sortie')) hr_indicators.HR_EMPLOYEE_OUT_LYON++;
+            }
+            if (issueLabels.includes('rouen')) {
+              if (issueLabels.includes('entree')) hr_indicators.HR_EMPLOYEE_IN_ROUEN++;
+              if (issueLabels.includes('sortie')) hr_indicators.HR_EMPLOYEE_OUT_ROUEN++;
+            }
+          } else {
+            if (issueLabels.includes('aix')) {
+              if (issueLabels.includes('entree')) hr_indicators.HR_INTERN_IN_AIX++;
+              if (issueLabels.includes('sortie')) hr_indicators.HR_INTERN_OUT_AIX++;
+            }
+            if (issueLabels.includes('lyon')) {
+              if (issueLabels.includes('entree')) hr_indicators.HR_INTERN_IN_LYON++;
+              if (issueLabels.includes('sortie')) hr_indicators.HR_INTERN_OUT_LYON++;
+            }
+            if (issueLabels.includes('rouen')) {
+              if (issueLabels.includes('entree')) hr_indicators.HR_INTERN_IN_ROUEN++;
+              if (issueLabels.includes('sortie')) hr_indicators.HR_INTERN_OUT_ROUEN++;
+            }
           }
         }
       }
