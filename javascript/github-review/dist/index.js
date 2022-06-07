@@ -51405,7 +51405,6 @@ function wrappy (fn, cb) {
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 const core = __nccwpck_require__(8864);
-const { isFriday } = __nccwpck_require__(6117);
 
 class Analyser {
   constructor(githubTools, normalizedResult) {

@@ -1,5 +1,4 @@
 const core = require("@actions/core");
-const { isFriday } = require("date-fns");
 
 class Analyser {
   constructor(githubTools, normalizedResult) {
