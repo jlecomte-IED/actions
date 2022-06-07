@@ -30,9 +30,9 @@ class OrgDataCollector {
     this.indicators = new Object();
     this.lastTrackedTeam = null;
 
-    
+
     this.githubTools = new GithubTools(token, organization, this.options);
-    this.analyser = new Analyser(this.orgNormalizedData);
+    this.analyser = new Analyser(this.githubTools, this.orgNormalizedData);
   }
 
   validateInput(organization, token) {
@@ -330,8 +330,18 @@ class OrgDataCollector {
     await this.githubTools.postCommentToIssue(body);
 
     //Posting analysis
-    body = `#### Member(s) with no name:`;
+    body = `### Member(s) with no name:`;
     this.analyser.analysisResults.membersWithNoName.forEach(member => body = body + `\n- ${member}`);
+    console.log(body);
+    await this.githubTools.postCommentToIssue(body);
+
+
+    body = `### Repositories with member with direct access:`;
+    this.analyser.analysisResults.membersWithDirectAccess.forEach(repo => {
+      body = body + `\n#### ${repo.name}`;
+      repo.members.forEach(member => body = body + `\n- ${member.login}`);
+    });
+    console.log(body);
     await this.githubTools.postCommentToIssue(body);
   }
 }
