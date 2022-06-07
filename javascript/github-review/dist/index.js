@@ -51805,12 +51805,7 @@ class OrgDataCollector {
       `\n` +
       `### Members review results\n` +
       `\n` +
-      `Get review artifacts [here](https://github.com/fulll/ISO-27001/actions/runs/${process.env.GITHUB_RUN_ID})\n` +
-      `\n` +
-      `### Pull Request review results\n` +
-      `\n` +
-      `Organization PR Created between ${this.pullRequestData.beginDate} and ${this.pullRequestData.endDate} = ${this.pullRequestData.prCreated} \n` +
-      `Organization PR Closed between ${this.pullRequestData.beginDate} and ${this.pullRequestData.endDate} = ${this.pullRequestData.prClosed}`;
+      `Get review artifacts [here](https://github.com/fulll/ISO-27001/actions/runs/${process.env.GITHUB_RUN_ID})\n`
     await this.githubTools.postCommentToIssue(body);
 
     //Posting analysis
