@@ -51405,34 +51405,76 @@ function wrappy (fn, cb) {
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 const core = __nccwpck_require__(8864);
+const { isFriday } = __nccwpck_require__(6117);
 
-class Analyser{
-  constructor (normalizedResult){
+class Analyser {
+  constructor(githubTools, normalizedResult) {
     this.normalizedResult = normalizedResult;
+    this.githubTools = githubTools;
     this.analysisResults = new Object();
   }
 
-  async startAnalysis(){  
+  async startAnalysis() {
+    core.info(`🔍 Starting Analysis...`);
     this.analysisResults.membersWithNoName = this.getMembersWithNameNotDefined();
+    this.analysisResults.membersWithDirectAccess = await this.getMembersWithDirectAccess();
+    core.info(`✅ Finished Analysis...`);
   }
-  
+
   getMembersWithNameNotDefined() {
-    
+    core.info(`🔍 Search for members without name...`);
     let membersWithNoName = [];
 
     this.normalizedResult.forEach(team => {
-      team.members.forEach(member =>{
-        if(!member.name && !membersWithNoName.includes(member.login)){
+      team.members.forEach(member => {
+        if (!member.name && !membersWithNoName.includes(member.login)) {
           membersWithNoName.push(member.login);
         }
       })
     });
-    
+
+    core.info(`✅ Finished Search for members without name.`);
     return membersWithNoName;
   }
 
-}
+  async getMembersWithDirectAccess() {
+    core.info(`🔍 Search for members with direct access...`);
+    let repositories = [];
+    let membersWithDirectAccess = [];
 
+    // List all repos
+    this.normalizedResult.forEach(team => {
+      team.repositories.forEach(repo => {
+        const [owner, r] = repo.split("/");
+        if (!repositories.includes(r)) {
+          repositories.push(r);
+        }
+      })
+    });
+
+    core.info(`Total repositories analysed: ${repositories.length}`);
+
+    for (const repo of repositories) {
+      let members = [];
+      try {
+        members = await this.githubTools.listRepoCollaborators(repo, "direct")
+      } catch (error) {
+        core.info(`${repo} = ${error.message}`);
+      }
+      finally{
+        if(members.length > 0){
+          membersWithDirectAccess.push({
+            name: repo,
+            members 
+          });
+        }
+        
+      }
+    }
+    core.info(`✅ Finished Search for members with direct access.`);
+    return membersWithDirectAccess;
+  }
+}
 
 module.exports = Analyser
 
@@ -51473,9 +51515,9 @@ class OrgDataCollector {
     this.indicators = new Object();
     this.lastTrackedTeam = null;
 
-    
+
     this.githubTools = new GithubTools(token, organization, this.options);
-    this.analyser = new Analyser(this.orgNormalizedData);
+    this.analyser = new Analyser(this.githubTools, this.orgNormalizedData);
   }
 
   validateInput(organization, token) {
@@ -51773,8 +51815,18 @@ class OrgDataCollector {
     await this.githubTools.postCommentToIssue(body);
 
     //Posting analysis
-    body = `#### Member(s) with no name:`;
+    body = `### Member(s) with no name:`;
     this.analyser.analysisResults.membersWithNoName.forEach(member => body = body + `\n- ${member}`);
+    console.log(body);
+    await this.githubTools.postCommentToIssue(body);
+
+
+    body = `### Repositories with member with direct access:`;
+    this.analyser.analysisResults.membersWithDirectAccess.forEach(repo => {
+      body = body + `\n#### ${repo.name}`;
+      repo.members.forEach(member => body = body + `\n- ${member.login}`);
+    });
+    console.log(body);
     await this.githubTools.postCommentToIssue(body);
   }
 }
@@ -51859,13 +51911,11 @@ class GithubTools {
     if (isClosed != null) {
       queryBody = queryBody + " " + isClosed;
     }
-    console.log(queryBody);
     const data = await this.graphqlClient(
       orgSearchAndCountQuery, {
       q: queryBody
     }
     );
-    console.log(data);
 
     return data;
   }
@@ -51916,15 +51966,6 @@ class GithubTools {
     );
     return data;
   }
-
-  async requestProjectListCards(
-    organization,
-    repo,
-    column_id
-  ) {
-
-  }
-
   /****************************** 
    *       Utils Methods        *
   *******************************/
@@ -51942,6 +51983,7 @@ class GithubTools {
   }
 
   async postCommentToIssue(body) {
+    
     core.info(`Posting Comment ...`);
     await this.octokit.issues.createComment({
       owner: this.owner,
@@ -52052,6 +52094,21 @@ class GithubTools {
     });
 
     return projectColumns;
+  }
+
+  /*
+    List users who have access to the repo
+    Type of afflilation : direct,outside or all
+  */
+
+  async listRepoCollaborators(repo, affiliation) {
+    const { data: repoCollab } = await this.octokit.repos.listCollaborators({
+      owner: this.owner,
+      repo,
+      affiliation
+    });
+
+    return repoCollab;
   }
 
   async getColumnId(column_name, columns) {

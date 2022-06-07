@@ -71,13 +71,11 @@ class GithubTools {
     if (isClosed != null) {
       queryBody = queryBody + " " + isClosed;
     }
-    console.log(queryBody);
     const data = await this.graphqlClient(
       orgSearchAndCountQuery, {
       q: queryBody
     }
     );
-    console.log(data);
 
     return data;
   }
@@ -128,15 +126,6 @@ class GithubTools {
     );
     return data;
   }
-
-  async requestProjectListCards(
-    organization,
-    repo,
-    column_id
-  ) {
-
-  }
-
   /****************************** 
    *       Utils Methods        *
   *******************************/
@@ -154,6 +143,7 @@ class GithubTools {
   }
 
   async postCommentToIssue(body) {
+    
     core.info(`Posting Comment ...`);
     await this.octokit.issues.createComment({
       owner: this.owner,
@@ -264,6 +254,21 @@ class GithubTools {
     });
 
     return projectColumns;
+  }
+
+  /*
+    List users who have access to the repo
+    Type of afflilation : direct,outside or all
+  */
+
+  async listRepoCollaborators(repo, affiliation) {
+    const { data: repoCollab } = await this.octokit.repos.listCollaborators({
+      owner: this.owner,
+      repo,
+      affiliation
+    });
+
+    return repoCollab;
   }
 
   async getColumnId(column_name, columns) {
