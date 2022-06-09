@@ -51528,33 +51528,6 @@ class OrgDataCollector {
     }
   }
 
-  async getPullRequestCount(organization, isClosed, creationPeriod) {
-    let data;
-    try {
-      data = await this.githubTools.requestOrgPullRequest(
-        organization,
-        isClosed,
-        creationPeriod
-      );
-    } catch (error) {
-      core.info(error.message);
-      if (error.message === ERROR_MESSAGE_TOKEN_UNAUTHORIZED) {
-        core.info(
-          `⏸  The token you use isn't authorized to be used with ${organization}`
-        );
-        return null;
-      }
-    } finally {
-      if (!data) {
-        core.info(
-          `⏸  No data found for ${organization}, probably you don't have the right permission`
-        );
-        return;
-      }
-
-      return data.search.issueCount;
-    }
-  }
 
   async collectTeamsData(organization, teamsCursor, repositoriesCursor, membersCursor) {
     let data;
@@ -51672,37 +51645,6 @@ class OrgDataCollector {
 
   }
 
-  async collectPullRequestData(organization) {
-    let nbPullResquestCreated;
-    let nbPullResquestClosed;
-    let date = new Date();
-
-    let firstDayString = dateFormat.format(new Date(date.getFullYear(), date.getMonth(), 1), 'yyyy-MM-dd');
-    let lastDayString = dateFormat.format(new Date(date.getFullYear(), date.getMonth() + 1, 0), 'yyyy-MM-dd');
-    let creationPeriod = firstDayString + ".." + lastDayString;
-
-    console.log(creationPeriod);
-
-    nbPullResquestCreated = await this.getPullRequestCount(
-      organization,
-      null,
-      creationPeriod
-    );
-
-    nbPullResquestClosed = await this.getPullRequestCount(
-      organization,
-      "is:closed",
-      creationPeriod
-    );
-
-    core.info(`Organization PR created between ${firstDayString} and ${lastDayString} = ${nbPullResquestCreated}`);
-    core.info(`Organization PR Closed between ${firstDayString} and ${lastDayString} = ${nbPullResquestClosed}`);
-
-    this.pullRequestData.beginDate = firstDayString;
-    this.pullRequestData.endDate = lastDayString;
-    this.pullRequestData.prCreated = nbPullResquestCreated;
-    this.pullRequestData.prClosed = nbPullResquestClosed;
-  }
 
   async startOrgReview(organization) {
     try {
@@ -51710,7 +51652,6 @@ class OrgDataCollector {
         core.startGroup(`🔍 Start collecting for organization ${login}.`);
         this.result[login] = null;
         await this.collectTeamsData(login);
-        await this.collectPullRequestData(login);
         if (this.result[login]) {
           core.info(
             `✅ Finished collecting for organization ${login}`
@@ -51805,12 +51746,7 @@ class OrgDataCollector {
       `\n` +
       `### Members review results\n` +
       `\n` +
-      `Get review artifacts [here](https://github.com/fulll/ISO-27001/actions/runs/${process.env.GITHUB_RUN_ID})\n` +
-      `\n` +
-      `### Pull Request review results\n` +
-      `\n` +
-      `Organization PR Created between ${this.pullRequestData.beginDate} and ${this.pullRequestData.endDate} = ${this.pullRequestData.prCreated} \n` +
-      `Organization PR Closed between ${this.pullRequestData.beginDate} and ${this.pullRequestData.endDate} = ${this.pullRequestData.prClosed}`;
+      `Get review artifacts [here](https://github.com/fulll/ISO-27001/actions/runs/${process.env.GITHUB_RUN_ID})\n`
     await this.githubTools.postCommentToIssue(body);
 
     //Posting analysis
