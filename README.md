@@ -1,9 +1,9 @@
 # actions
 
-Inextenso Digital collection of useful utilities for interacting with GitHub Actions.
+Fulll collection of useful utilities for interacting with GitHub Actions.
 
 
-[github-workflow:](https://github.com/inextensodigital/actions/tree/master/github-workflow) Manage Github Action workflows and actions by cli. Allows you to script edition.
+[github-workflow:](https://github.com/fulll/actions/tree/master/github-workflow) Manage Github Action workflows and actions by cli. Allows you to script edition.
 
 ## Implement it in your project
  - Import .github/prod-deploy.workflow in your `.github/main.workflow`
@@ -49,8 +49,8 @@ Usage information for individual commands can be found in their respective direc
 
 ## Workflows
 
-you can check [prod-deploy.workflow](https://github.com/inextensodigital/actions/blob/master/.github/prod-deploy.workflow)
-for production deployment flow (take car to add `makefile recipes` see [invoicing.app](https://github.com/inextensodigital/invoicing.app/blob/7c5f20e475e7b7a5c8b1c8f29bd6bdf1b44b8022/Makefile#L179-L208))
+you can check [prod-deploy.workflow](https://github.com/fulll/actions/blob/master/.github/prod-deploy.workflow)
+for production deployment flow (take car to add `makefile recipes` see [invoicing.app](https://github.com/fulll/invoicing.app/blob/7c5f20e475e7b7a5c8b1c8f29bd6bdf1b44b8022/Makefile#L179-L208))
 
-you can check [branch.workflow](https://github.com/inextensodigital/actions/blob/master/.github/branch.workflow)
+you can check [branch.workflow](https://github.com/fulll/actions/blob/master/.github/branch.workflow)
 for deleting merged branches

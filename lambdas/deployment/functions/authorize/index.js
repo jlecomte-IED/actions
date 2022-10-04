@@ -16,7 +16,7 @@ module.exports = async ({ queryStringParameters }) => {
       data: { login },
     } = await client.users.getAuthenticated({})
 
-    // 2. find ied teams
+    // 2. find fulll teams
     const { data: teams } = await client.teams.list({
       org: 'inextensodigital',
       headers: {

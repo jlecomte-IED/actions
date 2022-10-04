@@ -6,7 +6,7 @@ Runs a `make target` from the main `Makefile`.
 
 ```
 action "Build" {
-  uses = "inextensodigital/actions/make@master"
+  uses = "fulll/actions/make@master"
   args = "actions-build"
 }
 ```

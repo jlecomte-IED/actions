@@ -8,7 +8,7 @@ Creates a [Github Deployment](https://developer.github.com/v3/repos/deployments/
 
 ```hcl
 action "Create deployment & update release" {
-  uses = "inextensodigital/actions/deployment@master"
+  uses = "fulll/actions/deployment@master"
   args = "create"
 }
 ```
@@ -17,7 +17,7 @@ action "Create deployment & update release" {
 
 ```hcl
 action "Create deployment dev" {
-  uses = "inextensodigital/actions/deployment@master"
+  uses = "fulll/actions/deployment@master"
   args = "create"
   env = {
     STAGE = "dev"

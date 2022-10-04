@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/inextensodigital/actions/github-workflow/cmd"
+	"github.com/fulll/actions/github-workflow/cmd"
 )
 
 func main() {

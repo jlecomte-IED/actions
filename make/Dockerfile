@@ -8,9 +8,9 @@ LABEL "com.github.actions.description"="Build docker containers using make"
 LABEL "com.github.actions.icon"="package"
 LABEL "com.github.actions.color"="blue"
 
-LABEL "repository"="http://github.com/inextensodigital/actions"
-LABEL "homepage"="http://github.com/inextensodigital"
-LABEL "maintainer"="IED <contact@inextenso.digital>"
+LABEL "repository"="http://github.com/fulll/actions"
+LABEL "homepage"="http://github.com/fulll"
+LABEL "maintainer"="Fulll <contact@fulll.fr>"
 
 ADD entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

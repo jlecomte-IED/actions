@@ -31,12 +31,12 @@ Manage Github Action workflows and actions by cli. Allows you to script edition.
 You'll need a copy of go v1.11 or higher. Get binary directly from releases
 
 - Simple build, with latest versions of all dependencies:
-  `go get github.com/inextensodigital/actions/github-workflow`
+  `go get github.com/fulll/actions/github-workflow`
 
 - Repoducible build, using god mod to get pinned dependencies:
 
 ```shell
-git clone get git@github.com:inextensodigital/actions.git
+git clone get git@github.com:fulll/actions.git
 cd actions/github-workflow
 go build
 ```
@@ -48,7 +48,7 @@ go build
 
 github_username="your-organization"
 action_name="Auto create master → dev PRs"
-action_image="inextensodigital/actions/create-pull-request@master"
+action_image="fulll/actions/create-pull-request@master"
 unified_workflow_name="On pull request"
 
 for project in 'repo1' 'repo2' 'repo3'

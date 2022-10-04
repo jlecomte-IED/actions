@@ -1,4 +1,4 @@
-module github.com/inextensodigital/actions/github-workflow
+module github.com/fulll/actions/github-workflow
 
 require (
 	github.com/actions/workflow-parser v1.0.0

@@ -5,9 +5,9 @@ LABEL "com.github.actions.description"="Lint php files against coding standards"
 LABEL "com.github.actions.icon"="check"
 LABEL "com.github.actions.color"="blue"
 
-LABEL "repository"="http://github.com/inextensodigital/actions"
-LABEL "homepage"="http://github.com/inextensodigital"
-LABEL "maintainer"="IED <contact@inextenso.digital>"
+LABEL "repository"="http://github.com/fulll/actions"
+LABEL "homepage"="http://github.com/fulll"
+LABEL "maintainer"="Fulll <contact@fulll.fr>"
 
 RUN wget https://github.com/FriendsOfPHP/PHP-CS-Fixer/releases/download/v3.11.0/php-cs-fixer.phar -O /usr/local/bin/php-cs-fixer \
     && chmod a+x /usr/local/bin/php-cs-fixer

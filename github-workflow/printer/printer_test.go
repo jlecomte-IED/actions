@@ -17,7 +17,7 @@ type encoderTest struct {
 }
 
 func TestEncode(t *testing.T) {
-	u := model.UsesInvalid{Raw: "inextensodigital/actions/deployment@master"}
+	u := model.UsesInvalid{Raw: "fulll/actions/deployment@master"}
 	uh := &u
 	envList := make(map[string]string)
 
