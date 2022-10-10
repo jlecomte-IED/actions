@@ -374,6 +374,17 @@ class GithubTools {
     return result;
   }
 
+  //Remove direct access to repository collaborator. (Org repos Only)
+  async removeDirectAccess(repo, username){
+    await this.octokit.repos.removeCollaborator({
+      owner: this.owner,
+      repo,
+      username
+    })
+
+    core.info(`⛔️ User: ${username} have been removed from ${owner}/${repo}`)
+  }
+
 }
 module.exports = GithubTools;
 

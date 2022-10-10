@@ -15,6 +15,8 @@ const main = async () => {
     await new OrgDataCollector(token, organization, {
       repository: process.env.GITHUB_REPOSITORY,
       postToIssue: core.getInput("postToIssue") || process.env.ISSUE,
+      exportAnalysis: core.getInput("exportAnalysis") || process.env.EXPORT_ANALYSIS,
+      directAccessDeletion: core.getInput('directAccessDeletion') || process.env.DIRECT_ACCESS,
       issueTitle: core.getInput("issueTitle") || DEFAULT_ISSUE_TITLE,
       labels: core.getInput("labels").split(",") || DEFAULT_ISSUE_LABELS,
       assignees: core.getInput("assignees").split(",") || [""]

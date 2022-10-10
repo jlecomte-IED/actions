@@ -17,6 +17,14 @@ inputs:
   issueTitle:
     description: 'If you want to custom the issue title'
     required: false
+  exportAnalysis:
+    description: 'Export analysis results as json file'
+    required: false
+    default: false
+  directAccessDeletion:
+    description: 'If directAccessRemediation is true, directs access are removed'
+    required: false
+    default: false
   labels:
     description: 'Issue labels'
     required: false
