@@ -9,6 +9,7 @@ const {
   orgTeamsAndReposAndMembersQuery,
   orgSearchAndCountQuery,
   orgListRepoIssueQuery,
+  orgListProjectV2Items
 } = require("./queries");
 
 const ERROR_MESSAGE_TOKEN_UNAUTHORIZED =
@@ -126,6 +127,21 @@ class GithubTools {
     );
     return data;
   }
+
+  async requestOrgListProjectV2Items(
+    projectId,
+    itemsCursor = null,
+  ) {
+    const data  = await this.graphqlClient(
+      orgListProjectV2Items,
+      {
+        projectId,
+        itemsCursor
+      }
+    );
+    return data;
+  }
+
   /****************************** 
    *       Utils Methods        *
   *******************************/

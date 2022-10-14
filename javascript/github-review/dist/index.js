@@ -51401,6 +51401,38 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
+/***/ 9544:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const core = __nccwpck_require__(8864);
+
+async function accessRemover(githubTools, repositoriesWithDirectAccess) {
+  core.info("🪚 Start remove direct access ...");
+  repositoriesWithDirectAccess.forEach(async repository => {
+    const [, repo] = repository.name.split("/");
+    console.log(repository.members)
+    if (members.length > 0) {
+      for (const member of repository.members) {
+
+        await this.githubTools.removeDirectAccess(repo, member.login);
+      }
+    } else {
+      core.info('No collaborators to remove');
+    }
+
+
+  });
+
+  core.info("✅  Finished remove direct access");
+
+}
+
+module.exports = {
+  accessRemover
+}
+
+/***/ }),
+
 /***/ 5462:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -51416,8 +51448,9 @@ class Analyser {
   async startAnalysis() {
     core.info(`🔍 Starting Analysis...`);
     this.analysisResults.membersWithNoName = this.getMembersWithNameNotDefined();
-    this.analysisResults.membersWithDirectAccess = await this.getMembersWithDirectAccess();
+    this.analysisResults.repositoriesWithDirectAccess = await this.repositoriesWithDirectAccess();
     core.info(`✅ Finished Analysis...`);
+
   }
 
   getMembersWithNameNotDefined() {
@@ -51436,17 +51469,16 @@ class Analyser {
     return membersWithNoName;
   }
 
-  async getMembersWithDirectAccess() {
+  async repositoriesWithDirectAccess() {
     core.info(`🔍 Search for members with direct access...`);
     let repositories = [];
-    let membersWithDirectAccess = [];
+    let repositoriesWithDirectAccess = [];
 
     // List all repos
     this.normalizedResult.forEach(team => {
       team.repositories.forEach(repo => {
-        const [owner, r] = repo.split("/");
-        if (!repositories.includes(r)) {
-          repositories.push(r);
+        if (!repositories.includes(repo)) {
+          repositories.push(repo);
         }
       })
     });
@@ -51456,13 +51488,14 @@ class Analyser {
     for (const repo of repositories) {
       let members = [];
       try {
-        members = await this.githubTools.listRepoCollaborators(repo, "direct")
+        const [, r] = repo.split("/");
+        members = await this.githubTools.listRepoCollaborators(r, "direct")
       } catch (error) {
         core.info(`${repo} = ${error.message}`);
       }
       finally{
         if(members.length > 0){
-          membersWithDirectAccess.push({
+          repositoriesWithDirectAccess.push({
             name: repo,
             members 
           });
@@ -51471,8 +51504,10 @@ class Analyser {
       }
     }
     core.info(`✅ Finished Search for members with direct access.`);
-    return membersWithDirectAccess;
+    return repositoriesWithDirectAccess;
   }
+
+  async 
 }
 
 module.exports = Analyser
@@ -51490,6 +51525,7 @@ const dateFormat = __nccwpck_require__(6117);
 
 const Analyser = __nccwpck_require__(5462);
 const GithubTools = __nccwpck_require__(5430);
+const { accessRemover } = __nccwpck_require__(9544);
 const { csvToMarkdown } = __nccwpck_require__(4447);
 
 
@@ -51698,42 +51734,7 @@ class OrgDataCollector {
     });
   }
 
-  async endOrgReview() {
-    await this.normalizeResult();
-    const result_json = this.orgNormalizedData;
-
-    if (!result_json.length) {
-      return core.setFailed(`⚠️  No data collected. Stopping action`);
-    }
-
-    /**********************************
-    *** Create Artifact CSV and JSON ***
-    **********************************/
-    const json_filePath = `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}-${dateFormat.format(new Date(), 'yyyy-MM-dd')}.json`
-
-    await writeFileAsync(
-      json_filePath,
-      JSON.stringify(result_json)
-    );
-
-    await this.githubTools.createandUploadArtifacts([
-      json_filePath,
-    ]);
-
-    //Starting analysis
-    await this.analyser.startAnalysis();
-
-    // Posting review
-    await this.postingOrgReview();
-
-    process.exit();
-  }
-
   async postingOrgReview() {
-    if (!this.options.postToIssue) {
-      return core.debug("skipping posting review in issue");
-    }
-
     let body;
 
     await this.githubTools.findReviewIssue();
@@ -51764,6 +51765,57 @@ class OrgDataCollector {
     console.log(body);
     await this.githubTools.postCommentToIssue(body);
   }
+
+  async endOrgReview() {
+    await this.normalizeResult();
+    const result_json = this.orgNormalizedData;
+
+    if (!result_json.length) {
+      return core.setFailed(`⚠️  No data collected. Stopping action`);
+    }
+
+    /**********************************
+    *** Create Artifact CSV and JSON ***
+    **********************************/
+    const json_filePath = `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}-${dateFormat.format(new Date(), 'yyyy-MM-dd')}.json`
+    const analysis_filePath = `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}-analysis-${dateFormat.format(new Date(), 'yyyy-MM-dd')}.json`
+
+    //Starting analysis
+    await this.analyser.startAnalysis();
+
+    await writeFileAsync(
+      json_filePath,
+      JSON.stringify(result_json)
+    );
+
+    // Upload artifacts
+    await this.githubTools.createandUploadArtifacts([
+      json_filePath,
+    ]);
+
+    //Create analysis files
+    if (this.options.exportAnalysis == true) {
+      await writeFileAsync(
+        analysis_filePath,
+        JSON.stringify(this.analyser.analysisResults)
+      );
+
+      await this.githubTools.createandUploadArtifacts([
+        analysis_filePath,
+      ]);
+    }
+
+    if (this.options.directAccessDeletion) accessRemover(this.githubTools, this.analyser.analysisResults.membersWithDirectAccess);
+
+    if (this.options.postToIssue) {
+      // Posting review
+      await this.postingOrgReview();
+    } else {
+      return core.debug("Skipping posting review in issue");
+    }
+
+    process.exit();
+  }
 }
 
 module.exports = OrgDataCollector;
@@ -51784,6 +51836,7 @@ const {
   orgTeamsAndReposAndMembersQuery,
   orgSearchAndCountQuery,
   orgListRepoIssueQuery,
+  orgListProjectV2Items
 } = __nccwpck_require__(2046);
 
 const ERROR_MESSAGE_TOKEN_UNAUTHORIZED =
@@ -51901,6 +51954,21 @@ class GithubTools {
     );
     return data;
   }
+
+  async requestOrgListProjectV2Items(
+    projectId,
+    itemsCursor = null,
+  ) {
+    const data  = await this.graphqlClient(
+      orgListProjectV2Items,
+      {
+        projectId,
+        itemsCursor
+      }
+    );
+    return data;
+  }
+
   /****************************** 
    *       Utils Methods        *
   *******************************/
@@ -52118,6 +52186,17 @@ class GithubTools {
     return result;
   }
 
+  //Remove direct access to repository collaborator. (Org repos Only)
+  async removeDirectAccess(repo, username){
+    await this.octokit.repos.removeCollaborator({
+      owner: this.owner,
+      repo,
+      username
+    })
+
+    core.info(`⛔️ User: ${username} have been removed from ${owner}/${repo}`)
+  }
+
 }
 module.exports = GithubTools;
 
@@ -52142,6 +52221,8 @@ const ERROR_MESSAGE_TOKEN_UNAUTHORIZED =
   "Resource protected by organization SAML enforcement. You must grant your personal token access to this organization.";
 const ARTIFACT_FILE_NAME = "ISMS-indicators";
 const DATA_FOLDER = "./data"
+const SMSI_PROJECT = "⭐ SMSI - squad Compliance ⭐"
+const SMSI_PROJECT_ID = "PVT_kwDOAGMxGs4AEdwu"
 
 const writeFileAsync = promisify(fs.writeFile);
 !fs.existsSync(DATA_FOLDER) && fs.mkdirSync(DATA_FOLDER);
@@ -52153,8 +52234,95 @@ class IndicatorsCollector {
     this.token = token
     this.organizations = [{ login: organization }]
     this.options = options
+    this.projectItemsV2 = {};
     this.indicators = new Object();
     this.githubTools = new GithubTools(this.token, organization, this.options);
+  }
+
+  async collectProjectV2Items(projectId, itemsCursor) {
+    let data;
+    try {
+      data = await this.githubTools.requestOrgListProjectV2Items(
+        projectId,
+        itemsCursor
+      );
+    } catch (error) {
+      core.info(error.message);
+      if (error.message === ERROR_MESSAGE_TOKEN_UNAUTHORIZED) {
+        core.info(
+          `⏸  The token you use isn't authorized to be used with ${organization}`
+        );
+        return null;
+      }
+    } finally {
+      if (!data) {
+        core.info(
+          `⏸  No data found for ${organization}, probably you don't have the right permission`
+        );
+        return;
+      }
+
+      let result;
+      const projectTitle = data.node.title
+      const itemsPage = data.node.items.nodes
+      const itemsHasNextPage = data.node.items.pageInfo.hasNextPage;
+      const itemsNextCursor = data.node.items.pageInfo.endCursor;
+
+      if (!this.projectItemsV2[projectId]) {
+        result = this.projectItemsV2[projectId] = data;
+      } else {
+        result = this.projectItemsV2[projectId];
+
+        result.node.items.nodes = [
+          ...result.node.items.nodes,
+          ...itemsPage
+        ];
+      }
+
+      this.projectItemsV2[projectId] = result;
+      if (itemsHasNextPage === true) {
+        core.info(
+          `⏳ Still scanning project "${projectTitle}" items, total items count: ${result.node.items.nodes.length}`
+        );
+        let itemsStartCursor = itemsNextCursor;
+        await this.collectProjectV2Items(
+          projectId,
+          itemsStartCursor
+        );
+        return;
+      }
+
+      return this.projectItemsV2[projectId];
+    }
+  }
+
+  async countIssueInProjectV2(projectId,status, state, ...labels) {
+
+    let items = this.projectItemsV2[projectId].node.items.nodes
+    let issue_counter = 0;
+
+    for (var item of items) {
+      if (item.content != null && item.content.state == state) {
+
+        //create labels array
+        var issueLabels = []
+        item.content.labels.nodes.forEach(label => {
+          issueLabels.push(label.name);
+        });
+
+        //Verify for item status && labels
+
+        item.fieldValues.nodes.forEach(fieldValue => {
+          if (fieldValue.size != 0 && 'name' in fieldValue) {
+            if (fieldValue.field.name == 'Status' && fieldValue.name == status) {
+              if(labels.every(i => issueLabels.includes(i))) issue_counter++;
+            }
+          }
+        })
+
+      }
+    }
+    return issue_counter;
   }
 
   async collectSimpleIndicators(organization, creationPeriod) {
@@ -52201,11 +52369,15 @@ class IndicatorsCollector {
 
   async collectComplexIndicators(organization, creationPeriod) {
     core.info(`🔍 Start Collecting Complex indicators`);
+    core.info(`Start Collecting Project Items...`);
+    await this.collectProjectV2Items(SMSI_PROJECT_ID,null);
 
+    core.info("Getting SMSI_FAILURE_CRITICAL ...");
+  
     this.indicators.SMSI_FAILURE_CRITICAL = await this.githubTools.searchAndCountIssue(
       organization,
       `repo:${this.options.repository} is:issue is:open label:failure label:critical`
-    ) - await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To validate', 'open', 'failure', 'critical');
+      ) - await this.countIssueInProjectV2( SMSI_PROJECT_ID, '👍To validate', 'OPEN', 'failure', 'critical');
 
     core.info("Getting SMSI_FAILURE_PENDING ...");
     this.indicators.SMSI_FAILURE_PENDING =
@@ -52214,23 +52386,23 @@ class IndicatorsCollector {
         `repo:${this.options.repository} is:issue is:open label:failure`
       )
       -
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To validate', 'open', 'failure');
+      await this.countIssueInProjectV2(SMSI_PROJECT_ID, '👍To validate', 'OPEN', 'failure');
 
     core.info("Getting SMSI_FAILURE_TO_VALIDATE ...");
-    this.indicators.SMSI_FAILURE_TO_VALIDATE = await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To validate', 'open', 'failure');
+    this.indicators.SMSI_FAILURE_TO_VALIDATE = await this.countIssueInProjectV2(SMSI_PROJECT_ID, '👍To validate', 'OPEN', 'failure');
 
 
     core.info("Getting SMSI_NC_COUNT ...");
     this.indicators.SMSI_NC_COUNT =
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'In progress', 'open', 'bug') +
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'Current', 'open', 'bug') +
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To review', 'open', 'bug');
+      await this.countIssueInProjectV2(SMSI_PROJECT_ID, '🚌 In progress', 'OPEN', 'bug') +
+      await this.countIssueInProjectV2(SMSI_PROJECT_ID, '🤸‍♂To do', 'OPEN', 'bug') +
+      await this.countIssueInProjectV2(SMSI_PROJECT_ID, '👀 To revie', 'OPEN', 'bug');
 
-      core.info("Getting SMSI_OPP_COUNT ...");
+    core.info("Getting SMSI_OPP_COUNT ...");
     this.indicators.SMSI_OPP_COUNT =
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'In progress', 'open', 'enhancement') +
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'Current', 'open', 'enhancement') +
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To review', 'open', 'enhancement');
+      await this.countIssueInProjectV2(SMSI_PROJECT_ID, '🚌 In progress', 'OPEN', 'enhancement') +
+      await this.countIssueInProjectV2(SMSI_PROJECT_ID, '🤸‍♂To do', 'OPEN', 'enhancement') +
+      await this.countIssueInProjectV2(SMSI_PROJECT_ID, '👀 To revie', 'OPEN', 'enhancement');
 
     core.info(`✅ Finishing Collecting Complex indicators`);
   }
@@ -52545,7 +52717,86 @@ const queries = {
         }
       }
     }
-  }`
+  }`,
+  orgListProjectsV2: `
+  query($organization: String!, $projectsCursor: String){
+    organization(login: $organization){
+      projectsV2(first: 100, after: $projectsCursor) {
+				nodes{
+					id
+					title
+				}
+        pageInfo {
+          startCursor
+          hasNextPage
+          endCursor
+        }
+      }
+    }
+  }`,
+  orgListProjectV2Items:`
+  query($projectId: ID!, $itemsCursor: String){
+      node(id: $projectId) {
+        ... on ProjectV2 {
+          title
+          items(first: 100, after: $itemsCursor) {
+            nodes {
+              id
+              fieldValues(first: 8) {
+                nodes {
+                  ... on ProjectV2ItemFieldTextValue {
+                    text
+                    field {
+                      ... on ProjectV2FieldCommon {
+                        name
+                      }
+                    }
+                  }
+                  ... on ProjectV2ItemFieldDateValue {
+                    date
+                    field {
+                      ... on ProjectV2FieldCommon {
+                        name
+                      }
+                    }
+                  }
+                  ... on ProjectV2ItemFieldSingleSelectValue {
+                    name
+                    field {
+                      ... on ProjectV2FieldCommon {
+                        name
+                      }
+                    }
+                  }
+                }
+              }
+              content {
+                ... on Issue {
+                  title
+                  state
+                  assignees(first: 10) {
+                    nodes {
+                      login
+                    }
+                  }
+                  labels(first: 10) {
+                    nodes {
+                      id
+                      name
+                    }
+                  }
+                }
+              }
+            }
+            pageInfo {
+              startCursor
+              hasNextPage
+              endCursor
+            }
+          }
+        }
+      }
+    }`
 };
 
 module.exports = queries;
@@ -52792,6 +53043,8 @@ const main = async () => {
     await new OrgDataCollector(token, organization, {
       repository: process.env.GITHUB_REPOSITORY,
       postToIssue: core.getInput("postToIssue") || process.env.ISSUE,
+      exportAnalysis: core.getInput("exportAnalysis") || process.env.EXPORT_ANALYSIS,
+      directAccessDeletion: core.getInput('directAccessDeletion') || process.env.DIRECT_ACCESS,
       issueTitle: core.getInput("issueTitle") || DEFAULT_ISSUE_TITLE,
       labels: core.getInput("labels").split(",") || DEFAULT_ISSUE_LABELS,
       assignees: core.getInput("assignees").split(",") || [""]
