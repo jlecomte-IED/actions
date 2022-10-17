@@ -140,7 +140,6 @@ class GithubTools {
         number
       }
     );
-    console.log(data)
     return data.projectV2.id;
   }
 

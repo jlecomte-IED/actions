@@ -158,9 +158,7 @@ class IndicatorsCollector {
   async collectComplexIndicators(organization, creationPeriod) {
     core.info(`🔍 Start Collecting Complex indicators`);
     core.info(`Start Collecting Project Items...`);
-    console.log(this.options.projectV2Number)
     const SMSI_PROJECT_ID = await this.githubTools.getProjectV2ID(organization,this.options.projectV2Number)
-    console.log(SMSI_PROJECT_ID)
     await this.collectProjectV2Items(SMSI_PROJECT_ID,null);
 
     core.info("Getting SMSI_FAILURE_CRITICAL ...");
