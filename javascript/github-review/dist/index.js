@@ -51401,38 +51401,6 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
-/***/ 9544:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const core = __nccwpck_require__(8864);
-
-async function accessRemover(githubTools, repositoriesWithDirectAccess) {
-  core.info("🪚 Start remove direct access ...");
-  repositoriesWithDirectAccess.forEach(async repository => {
-    const [, repo] = repository.name.split("/");
-    console.log(repository.members)
-    if (members.length > 0) {
-      for (const member of repository.members) {
-
-        await this.githubTools.removeDirectAccess(repo, member.login);
-      }
-    } else {
-      core.info('No collaborators to remove');
-    }
-
-
-  });
-
-  core.info("✅  Finished remove direct access");
-
-}
-
-module.exports = {
-  accessRemover
-}
-
-/***/ }),
-
 /***/ 5462:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -51448,9 +51416,8 @@ class Analyser {
   async startAnalysis() {
     core.info(`🔍 Starting Analysis...`);
     this.analysisResults.membersWithNoName = this.getMembersWithNameNotDefined();
-    this.analysisResults.repositoriesWithDirectAccess = await this.repositoriesWithDirectAccess();
+    this.analysisResults.membersWithDirectAccess = await this.getMembersWithDirectAccess();
     core.info(`✅ Finished Analysis...`);
-
   }
 
   getMembersWithNameNotDefined() {
@@ -51469,16 +51436,17 @@ class Analyser {
     return membersWithNoName;
   }
 
-  async repositoriesWithDirectAccess() {
+  async getMembersWithDirectAccess() {
     core.info(`🔍 Search for members with direct access...`);
     let repositories = [];
-    let repositoriesWithDirectAccess = [];
+    let membersWithDirectAccess = [];
 
     // List all repos
     this.normalizedResult.forEach(team => {
       team.repositories.forEach(repo => {
-        if (!repositories.includes(repo)) {
-          repositories.push(repo);
+        const [owner, r] = repo.split("/");
+        if (!repositories.includes(r)) {
+          repositories.push(r);
         }
       })
     });
@@ -51488,14 +51456,13 @@ class Analyser {
     for (const repo of repositories) {
       let members = [];
       try {
-        const [, r] = repo.split("/");
-        members = await this.githubTools.listRepoCollaborators(r, "direct")
+        members = await this.githubTools.listRepoCollaborators(repo, "direct")
       } catch (error) {
         core.info(`${repo} = ${error.message}`);
       }
       finally{
         if(members.length > 0){
-          repositoriesWithDirectAccess.push({
+          membersWithDirectAccess.push({
             name: repo,
             members 
           });
@@ -51504,10 +51471,8 @@ class Analyser {
       }
     }
     core.info(`✅ Finished Search for members with direct access.`);
-    return repositoriesWithDirectAccess;
+    return membersWithDirectAccess;
   }
-
-  async 
 }
 
 module.exports = Analyser
@@ -51525,7 +51490,6 @@ const dateFormat = __nccwpck_require__(6117);
 
 const Analyser = __nccwpck_require__(5462);
 const GithubTools = __nccwpck_require__(5430);
-const { accessRemover } = __nccwpck_require__(9544);
 const { csvToMarkdown } = __nccwpck_require__(4447);
 
 
@@ -51734,7 +51698,42 @@ class OrgDataCollector {
     });
   }
 
+  async endOrgReview() {
+    await this.normalizeResult();
+    const result_json = this.orgNormalizedData;
+
+    if (!result_json.length) {
+      return core.setFailed(`⚠️  No data collected. Stopping action`);
+    }
+
+    /**********************************
+    *** Create Artifact CSV and JSON ***
+    **********************************/
+    const json_filePath = `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}-${dateFormat.format(new Date(), 'yyyy-MM-dd')}.json`
+
+    await writeFileAsync(
+      json_filePath,
+      JSON.stringify(result_json)
+    );
+
+    await this.githubTools.createandUploadArtifacts([
+      json_filePath,
+    ]);
+
+    //Starting analysis
+    await this.analyser.startAnalysis();
+
+    // Posting review
+    await this.postingOrgReview();
+
+    process.exit();
+  }
+
   async postingOrgReview() {
+    if (!this.options.postToIssue) {
+      return core.debug("skipping posting review in issue");
+    }
+
     let body;
 
     await this.githubTools.findReviewIssue();
@@ -51765,57 +51764,6 @@ class OrgDataCollector {
     console.log(body);
     await this.githubTools.postCommentToIssue(body);
   }
-
-  async endOrgReview() {
-    await this.normalizeResult();
-    const result_json = this.orgNormalizedData;
-
-    if (!result_json.length) {
-      return core.setFailed(`⚠️  No data collected. Stopping action`);
-    }
-
-    /**********************************
-    *** Create Artifact CSV and JSON ***
-    **********************************/
-    const json_filePath = `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}-${dateFormat.format(new Date(), 'yyyy-MM-dd')}.json`
-    const analysis_filePath = `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}-analysis-${dateFormat.format(new Date(), 'yyyy-MM-dd')}.json`
-
-    //Starting analysis
-    await this.analyser.startAnalysis();
-
-    await writeFileAsync(
-      json_filePath,
-      JSON.stringify(result_json)
-    );
-
-    // Upload artifacts
-    await this.githubTools.createandUploadArtifacts([
-      json_filePath,
-    ]);
-
-    //Create analysis files
-    if (this.options.exportAnalysis == true) {
-      await writeFileAsync(
-        analysis_filePath,
-        JSON.stringify(this.analyser.analysisResults)
-      );
-
-      await this.githubTools.createandUploadArtifacts([
-        analysis_filePath,
-      ]);
-    }
-
-    if (this.options.directAccessDeletion) accessRemover(this.githubTools, this.analyser.analysisResults.membersWithDirectAccess);
-
-    if (this.options.postToIssue) {
-      // Posting review
-      await this.postingOrgReview();
-    } else {
-      return core.debug("Skipping posting review in issue");
-    }
-
-    process.exit();
-  }
 }
 
 module.exports = OrgDataCollector;
@@ -51836,7 +51784,8 @@ const {
   orgTeamsAndReposAndMembersQuery,
   orgSearchAndCountQuery,
   orgListRepoIssueQuery,
-  orgListProjectV2Items
+  orgListProjectV2Items,
+  orgGetProjectV2ID
 } = __nccwpck_require__(2046);
 
 const ERROR_MESSAGE_TOKEN_UNAUTHORIZED =
@@ -51955,11 +51904,26 @@ class GithubTools {
     return data;
   }
 
+  async getProjectV2ID(
+    organization,
+    number
+  ) {
+    const { organization: data } = await this.graphqlClient(
+      orgGetProjectV2ID,
+      {
+        organization,
+        number
+      }
+    );
+    console.log(data)
+    return data.projectV2.id;
+  }
+
   async requestOrgListProjectV2Items(
     projectId,
     itemsCursor = null,
   ) {
-    const data  = await this.graphqlClient(
+    const data = await this.graphqlClient(
       orgListProjectV2Items,
       {
         projectId,
@@ -51986,7 +51950,7 @@ class GithubTools {
   }
 
   async postCommentToIssue(body) {
-    
+
     core.info(`Posting Comment ...`);
     await this.octokit.issues.createComment({
       owner: this.owner,
@@ -52186,17 +52150,6 @@ class GithubTools {
     return result;
   }
 
-  //Remove direct access to repository collaborator. (Org repos Only)
-  async removeDirectAccess(repo, username){
-    await this.octokit.repos.removeCollaborator({
-      owner: this.owner,
-      repo,
-      username
-    })
-
-    core.info(`⛔️ User: ${username} have been removed from ${owner}/${repo}`)
-  }
-
 }
 module.exports = GithubTools;
 
@@ -52221,8 +52174,6 @@ const ERROR_MESSAGE_TOKEN_UNAUTHORIZED =
   "Resource protected by organization SAML enforcement. You must grant your personal token access to this organization.";
 const ARTIFACT_FILE_NAME = "ISMS-indicators";
 const DATA_FOLDER = "./data"
-const SMSI_PROJECT = "⭐ SMSI - squad Compliance ⭐"
-const SMSI_PROJECT_ID = "PVT_kwDOAGMxGs4AEdwu"
 
 const writeFileAsync = promisify(fs.writeFile);
 !fs.existsSync(DATA_FOLDER) && fs.mkdirSync(DATA_FOLDER);
@@ -52370,6 +52321,9 @@ class IndicatorsCollector {
   async collectComplexIndicators(organization, creationPeriod) {
     core.info(`🔍 Start Collecting Complex indicators`);
     core.info(`Start Collecting Project Items...`);
+    console.log(this.options.projectV2Number)
+    const SMSI_PROJECT_ID = await this.githubTools.getProjectV2ID(organization,this.options.projectV2Number)
+    console.log(SMSI_PROJECT_ID)
     await this.collectProjectV2Items(SMSI_PROJECT_ID,null);
 
     core.info("Getting SMSI_FAILURE_CRITICAL ...");
@@ -52377,7 +52331,7 @@ class IndicatorsCollector {
     this.indicators.SMSI_FAILURE_CRITICAL = await this.githubTools.searchAndCountIssue(
       organization,
       `repo:${this.options.repository} is:issue is:open label:failure label:critical`
-      ) - await this.countIssueInProjectV2( SMSI_PROJECT_ID, '👍To validate', 'OPEN', 'failure', 'critical');
+      ) - await this.countIssueInProjectV2(SMSI_PROJECT_ID, '👍To validate', 'OPEN', 'failure', 'critical');
 
     core.info("Getting SMSI_FAILURE_PENDING ...");
     this.indicators.SMSI_FAILURE_PENDING =
@@ -52734,6 +52688,15 @@ const queries = {
       }
     }
   }`,
+  orgGetProjectV2ID: `
+  query($organization: String!, $number: Int!){
+    organization(login: $organization){
+      projectV2(number: $number) {
+        id
+        title
+      }
+    }
+  }`,
   orgListProjectV2Items:`
   query($projectId: ID!, $itemsCursor: String){
       node(id: $projectId) {
@@ -53043,8 +53006,6 @@ const main = async () => {
     await new OrgDataCollector(token, organization, {
       repository: process.env.GITHUB_REPOSITORY,
       postToIssue: core.getInput("postToIssue") || process.env.ISSUE,
-      exportAnalysis: core.getInput("exportAnalysis") || process.env.EXPORT_ANALYSIS,
-      directAccessDeletion: core.getInput('directAccessDeletion') || process.env.DIRECT_ACCESS,
       issueTitle: core.getInput("issueTitle") || DEFAULT_ISSUE_TITLE,
       labels: core.getInput("labels").split(",") || DEFAULT_ISSUE_LABELS,
       assignees: core.getInput("assignees").split(",") || [""]
@@ -53052,6 +53013,7 @@ const main = async () => {
   } else if (reviewType == "indicators") {
     await new IndicatorsCollector(token, organization, {
       repository: process.env.GITHUB_REPOSITORY,
+      projectV2Number: parseInt(core.getInput("projectV2Number")) || parseInt(process.env.PROJECTV2_NUMBER)
     }).startIndicatorsReview();
   } else {
     core.info('review is not set in workflow');

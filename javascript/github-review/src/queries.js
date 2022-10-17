@@ -187,6 +187,15 @@ const queries = {
       }
     }
   }`,
+  orgGetProjectV2ID: `
+  query($organization: String!, $number: Int!){
+    organization(login: $organization){
+      projectV2(number: $number) {
+        id
+        title
+      }
+    }
+  }`,
   orgListProjectV2Items:`
   query($projectId: ID!, $itemsCursor: String){
       node(id: $projectId) {

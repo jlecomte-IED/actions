@@ -23,6 +23,9 @@ inputs:
   assignees: 
     description: 'Assign people to issue'
     required: false
+  projectV2Number: 
+    description: 'ID number of the projectsV2'
+    required: false
 runs:
   using: 'node12'
   main: 'dist/index.js'

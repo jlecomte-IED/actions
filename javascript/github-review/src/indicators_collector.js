@@ -11,8 +11,6 @@ const ERROR_MESSAGE_TOKEN_UNAUTHORIZED =
   "Resource protected by organization SAML enforcement. You must grant your personal token access to this organization.";
 const ARTIFACT_FILE_NAME = "ISMS-indicators";
 const DATA_FOLDER = "./data"
-const SMSI_PROJECT = "⭐ SMSI - squad Compliance ⭐"
-const SMSI_PROJECT_ID = "PVT_kwDOAGMxGs4AEdwu"
 
 const writeFileAsync = promisify(fs.writeFile);
 !fs.existsSync(DATA_FOLDER) && fs.mkdirSync(DATA_FOLDER);
@@ -160,6 +158,9 @@ class IndicatorsCollector {
   async collectComplexIndicators(organization, creationPeriod) {
     core.info(`🔍 Start Collecting Complex indicators`);
     core.info(`Start Collecting Project Items...`);
+    console.log(this.options.projectV2Number)
+    const SMSI_PROJECT_ID = await this.githubTools.getProjectV2ID(organization,this.options.projectV2Number)
+    console.log(SMSI_PROJECT_ID)
     await this.collectProjectV2Items(SMSI_PROJECT_ID,null);
 
     core.info("Getting SMSI_FAILURE_CRITICAL ...");
@@ -167,7 +168,7 @@ class IndicatorsCollector {
     this.indicators.SMSI_FAILURE_CRITICAL = await this.githubTools.searchAndCountIssue(
       organization,
       `repo:${this.options.repository} is:issue is:open label:failure label:critical`
-      ) - await this.countIssueInProjectV2( SMSI_PROJECT_ID, '👍To validate', 'OPEN', 'failure', 'critical');
+      ) - await this.countIssueInProjectV2(SMSI_PROJECT_ID, '👍To validate', 'OPEN', 'failure', 'critical');
 
     core.info("Getting SMSI_FAILURE_PENDING ...");
     this.indicators.SMSI_FAILURE_PENDING =
