@@ -170,7 +170,95 @@ const queries = {
         }
       }
     }
-  }`
+  }`,
+  orgListProjectsV2: `
+  query($organization: String!, $projectsCursor: String){
+    organization(login: $organization){
+      projectsV2(first: 100, after: $projectsCursor) {
+				nodes{
+					id
+					title
+				}
+        pageInfo {
+          startCursor
+          hasNextPage
+          endCursor
+        }
+      }
+    }
+  }`,
+  orgGetProjectV2ID: `
+  query($organization: String!, $number: Int!){
+    organization(login: $organization){
+      projectV2(number: $number) {
+        id
+        title
+      }
+    }
+  }`,
+  orgListProjectV2Items:`
+  query($projectId: ID!, $itemsCursor: String){
+      node(id: $projectId) {
+        ... on ProjectV2 {
+          title
+          items(first: 100, after: $itemsCursor) {
+            nodes {
+              id
+              fieldValues(first: 8) {
+                nodes {
+                  ... on ProjectV2ItemFieldTextValue {
+                    text
+                    field {
+                      ... on ProjectV2FieldCommon {
+                        name
+                      }
+                    }
+                  }
+                  ... on ProjectV2ItemFieldDateValue {
+                    date
+                    field {
+                      ... on ProjectV2FieldCommon {
+                        name
+                      }
+                    }
+                  }
+                  ... on ProjectV2ItemFieldSingleSelectValue {
+                    name
+                    field {
+                      ... on ProjectV2FieldCommon {
+                        name
+                      }
+                    }
+                  }
+                }
+              }
+              content {
+                ... on Issue {
+                  title
+                  state
+                  assignees(first: 10) {
+                    nodes {
+                      login
+                    }
+                  }
+                  labels(first: 10) {
+                    nodes {
+                      id
+                      name
+                    }
+                  }
+                }
+              }
+            }
+            pageInfo {
+              startCursor
+              hasNextPage
+              endCursor
+            }
+          }
+        }
+      }
+    }`
 };
 
 module.exports = queries;

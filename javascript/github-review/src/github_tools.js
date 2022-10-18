@@ -9,6 +9,8 @@ const {
   orgTeamsAndReposAndMembersQuery,
   orgSearchAndCountQuery,
   orgListRepoIssueQuery,
+  orgListProjectV2Items,
+  orgGetProjectV2ID
 } = require("./queries");
 
 const ERROR_MESSAGE_TOKEN_UNAUTHORIZED =
@@ -126,6 +128,35 @@ class GithubTools {
     );
     return data;
   }
+
+  async getProjectV2ID(
+    organization,
+    number
+  ) {
+    const { organization: data } = await this.graphqlClient(
+      orgGetProjectV2ID,
+      {
+        organization,
+        number
+      }
+    );
+    return data.projectV2.id;
+  }
+
+  async requestOrgListProjectV2Items(
+    projectId,
+    itemsCursor = null,
+  ) {
+    const data = await this.graphqlClient(
+      orgListProjectV2Items,
+      {
+        projectId,
+        itemsCursor
+      }
+    );
+    return data;
+  }
+
   /****************************** 
    *       Utils Methods        *
   *******************************/
@@ -143,7 +174,7 @@ class GithubTools {
   }
 
   async postCommentToIssue(body) {
-    
+
     core.info(`Posting Comment ...`);
     await this.octokit.issues.createComment({
       owner: this.owner,

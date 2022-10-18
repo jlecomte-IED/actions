@@ -22,6 +22,7 @@ const main = async () => {
   } else if (reviewType == "indicators") {
     await new IndicatorsCollector(token, organization, {
       repository: process.env.GITHUB_REPOSITORY,
+      projectV2Number: parseInt(core.getInput("projectV2Number")) || parseInt(process.env.PROJECTV2_NUMBER)
     }).startIndicatorsReview();
   } else {
     core.info('review is not set in workflow');

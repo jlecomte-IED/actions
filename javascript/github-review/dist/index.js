@@ -51784,6 +51784,8 @@ const {
   orgTeamsAndReposAndMembersQuery,
   orgSearchAndCountQuery,
   orgListRepoIssueQuery,
+  orgListProjectV2Items,
+  orgGetProjectV2ID
 } = __nccwpck_require__(2046);
 
 const ERROR_MESSAGE_TOKEN_UNAUTHORIZED =
@@ -51901,6 +51903,35 @@ class GithubTools {
     );
     return data;
   }
+
+  async getProjectV2ID(
+    organization,
+    number
+  ) {
+    const { organization: data } = await this.graphqlClient(
+      orgGetProjectV2ID,
+      {
+        organization,
+        number
+      }
+    );
+    return data.projectV2.id;
+  }
+
+  async requestOrgListProjectV2Items(
+    projectId,
+    itemsCursor = null,
+  ) {
+    const data = await this.graphqlClient(
+      orgListProjectV2Items,
+      {
+        projectId,
+        itemsCursor
+      }
+    );
+    return data;
+  }
+
   /****************************** 
    *       Utils Methods        *
   *******************************/
@@ -51918,7 +51949,7 @@ class GithubTools {
   }
 
   async postCommentToIssue(body) {
-    
+
     core.info(`Posting Comment ...`);
     await this.octokit.issues.createComment({
       owner: this.owner,
@@ -52153,8 +52184,95 @@ class IndicatorsCollector {
     this.token = token
     this.organizations = [{ login: organization }]
     this.options = options
+    this.projectItemsV2 = {};
     this.indicators = new Object();
     this.githubTools = new GithubTools(this.token, organization, this.options);
+  }
+
+  async collectProjectV2Items(projectId, itemsCursor) {
+    let data;
+    try {
+      data = await this.githubTools.requestOrgListProjectV2Items(
+        projectId,
+        itemsCursor
+      );
+    } catch (error) {
+      core.info(error.message);
+      if (error.message === ERROR_MESSAGE_TOKEN_UNAUTHORIZED) {
+        core.info(
+          `⏸  The token you use isn't authorized to be used with ${organization}`
+        );
+        return null;
+      }
+    } finally {
+      if (!data) {
+        core.info(
+          `⏸  No data found for ${organization}, probably you don't have the right permission`
+        );
+        return;
+      }
+
+      let result;
+      const projectTitle = data.node.title
+      const itemsPage = data.node.items.nodes
+      const itemsHasNextPage = data.node.items.pageInfo.hasNextPage;
+      const itemsNextCursor = data.node.items.pageInfo.endCursor;
+
+      if (!this.projectItemsV2[projectId]) {
+        result = this.projectItemsV2[projectId] = data;
+      } else {
+        result = this.projectItemsV2[projectId];
+
+        result.node.items.nodes = [
+          ...result.node.items.nodes,
+          ...itemsPage
+        ];
+      }
+
+      this.projectItemsV2[projectId] = result;
+      if (itemsHasNextPage === true) {
+        core.info(
+          `⏳ Still scanning project "${projectTitle}" items, total items count: ${result.node.items.nodes.length}`
+        );
+        let itemsStartCursor = itemsNextCursor;
+        await this.collectProjectV2Items(
+          projectId,
+          itemsStartCursor
+        );
+        return;
+      }
+
+      return this.projectItemsV2[projectId];
+    }
+  }
+
+  async countIssueInProjectV2(projectId,status, state, ...labels) {
+
+    let items = this.projectItemsV2[projectId].node.items.nodes
+    let issue_counter = 0;
+
+    for (var item of items) {
+      if (item.content != null && item.content.state == state) {
+
+        //create labels array
+        var issueLabels = []
+        item.content.labels.nodes.forEach(label => {
+          issueLabels.push(label.name);
+        });
+
+        //Verify for item status && labels
+
+        item.fieldValues.nodes.forEach(fieldValue => {
+          if (fieldValue.size != 0 && 'name' in fieldValue) {
+            if (fieldValue.field.name == 'Status' && fieldValue.name == status) {
+              if(labels.every(i => issueLabels.includes(i))) issue_counter++;
+            }
+          }
+        })
+
+      }
+    }
+    return issue_counter;
   }
 
   async collectSimpleIndicators(organization, creationPeriod) {
@@ -52201,11 +52319,16 @@ class IndicatorsCollector {
 
   async collectComplexIndicators(organization, creationPeriod) {
     core.info(`🔍 Start Collecting Complex indicators`);
+    core.info(`Start Collecting Project Items...`);
+    const SMSI_PROJECT_ID = await this.githubTools.getProjectV2ID(organization,this.options.projectV2Number)
+    await this.collectProjectV2Items(SMSI_PROJECT_ID,null);
 
+    core.info("Getting SMSI_FAILURE_CRITICAL ...");
+  
     this.indicators.SMSI_FAILURE_CRITICAL = await this.githubTools.searchAndCountIssue(
       organization,
       `repo:${this.options.repository} is:issue is:open label:failure label:critical`
-    ) - await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To validate', 'open', 'failure', 'critical');
+      ) - await this.countIssueInProjectV2(SMSI_PROJECT_ID, '👍To validate', 'OPEN', 'failure', 'critical');
 
     core.info("Getting SMSI_FAILURE_PENDING ...");
     this.indicators.SMSI_FAILURE_PENDING =
@@ -52214,23 +52337,23 @@ class IndicatorsCollector {
         `repo:${this.options.repository} is:issue is:open label:failure`
       )
       -
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To validate', 'open', 'failure');
+      await this.countIssueInProjectV2(SMSI_PROJECT_ID, '👍To validate', 'OPEN', 'failure');
 
     core.info("Getting SMSI_FAILURE_TO_VALIDATE ...");
-    this.indicators.SMSI_FAILURE_TO_VALIDATE = await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To validate', 'open', 'failure');
+    this.indicators.SMSI_FAILURE_TO_VALIDATE = await this.countIssueInProjectV2(SMSI_PROJECT_ID, '👍To validate', 'OPEN', 'failure');
 
 
     core.info("Getting SMSI_NC_COUNT ...");
     this.indicators.SMSI_NC_COUNT =
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'In progress', 'open', 'bug') +
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'Current', 'open', 'bug') +
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To review', 'open', 'bug');
+      await this.countIssueInProjectV2(SMSI_PROJECT_ID, '🚌 In progress', 'OPEN', 'bug') +
+      await this.countIssueInProjectV2(SMSI_PROJECT_ID, '🤸‍♂To do', 'OPEN', 'bug') +
+      await this.countIssueInProjectV2(SMSI_PROJECT_ID, '👀 To revie', 'OPEN', 'bug');
 
-      core.info("Getting SMSI_OPP_COUNT ...");
+    core.info("Getting SMSI_OPP_COUNT ...");
     this.indicators.SMSI_OPP_COUNT =
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'In progress', 'open', 'enhancement') +
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'Current', 'open', 'enhancement') +
-      await this.githubTools.countIssuesInColumn('Global ISO 27001', 'To review', 'open', 'enhancement');
+      await this.countIssueInProjectV2(SMSI_PROJECT_ID, '🚌 In progress', 'OPEN', 'enhancement') +
+      await this.countIssueInProjectV2(SMSI_PROJECT_ID, '🤸‍♂To do', 'OPEN', 'enhancement') +
+      await this.countIssueInProjectV2(SMSI_PROJECT_ID, '👀 To revie', 'OPEN', 'enhancement');
 
     core.info(`✅ Finishing Collecting Complex indicators`);
   }
@@ -52545,7 +52668,95 @@ const queries = {
         }
       }
     }
-  }`
+  }`,
+  orgListProjectsV2: `
+  query($organization: String!, $projectsCursor: String){
+    organization(login: $organization){
+      projectsV2(first: 100, after: $projectsCursor) {
+				nodes{
+					id
+					title
+				}
+        pageInfo {
+          startCursor
+          hasNextPage
+          endCursor
+        }
+      }
+    }
+  }`,
+  orgGetProjectV2ID: `
+  query($organization: String!, $number: Int!){
+    organization(login: $organization){
+      projectV2(number: $number) {
+        id
+        title
+      }
+    }
+  }`,
+  orgListProjectV2Items:`
+  query($projectId: ID!, $itemsCursor: String){
+      node(id: $projectId) {
+        ... on ProjectV2 {
+          title
+          items(first: 100, after: $itemsCursor) {
+            nodes {
+              id
+              fieldValues(first: 8) {
+                nodes {
+                  ... on ProjectV2ItemFieldTextValue {
+                    text
+                    field {
+                      ... on ProjectV2FieldCommon {
+                        name
+                      }
+                    }
+                  }
+                  ... on ProjectV2ItemFieldDateValue {
+                    date
+                    field {
+                      ... on ProjectV2FieldCommon {
+                        name
+                      }
+                    }
+                  }
+                  ... on ProjectV2ItemFieldSingleSelectValue {
+                    name
+                    field {
+                      ... on ProjectV2FieldCommon {
+                        name
+                      }
+                    }
+                  }
+                }
+              }
+              content {
+                ... on Issue {
+                  title
+                  state
+                  assignees(first: 10) {
+                    nodes {
+                      login
+                    }
+                  }
+                  labels(first: 10) {
+                    nodes {
+                      id
+                      name
+                    }
+                  }
+                }
+              }
+            }
+            pageInfo {
+              startCursor
+              hasNextPage
+              endCursor
+            }
+          }
+        }
+      }
+    }`
 };
 
 module.exports = queries;
@@ -52799,6 +53010,7 @@ const main = async () => {
   } else if (reviewType == "indicators") {
     await new IndicatorsCollector(token, organization, {
       repository: process.env.GITHUB_REPOSITORY,
+      projectV2Number: parseInt(core.getInput("projectV2Number")) || parseInt(process.env.PROJECTV2_NUMBER)
     }).startIndicatorsReview();
   } else {
     core.info('review is not set in workflow');
