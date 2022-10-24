@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"github.com/actions/workflow-parser/model"
-	"github.com/inextensodigital/actions/github-workflow/parser"
-	"github.com/inextensodigital/actions/github-workflow/printer"
+	"github.com/fulll/actions/github-workflow/parser"
+	"github.com/fulll/actions/github-workflow/printer"
 	"github.com/spf13/cobra"
 )
 

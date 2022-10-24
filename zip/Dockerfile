@@ -7,8 +7,8 @@ LABEL "com.github.actions.description"="Produce a zip archive from files"
 LABEL "com.github.actions.icon"="package"
 LABEL "com.github.actions.color"="yellow"
 
-LABEL "repository"="http://github.com/inextensodigital/actions"
-LABEL "homepage"="http://github.com/inextensodigital"
-LABEL "maintainer"="IED <contact@inextenso.digital>"
+LABEL "repository"="http://github.com/fulll/actions"
+LABEL "homepage"="http://github.com/fulll"
+LABEL "maintainer"="Fulll <contact@fulll.fr>"
 
 ENTRYPOINT ["zip"]

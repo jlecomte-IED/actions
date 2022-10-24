@@ -1,5 +1,5 @@
 action "deploy" {
-  uses = "inextensodigital/actions/deployment@master"
+  uses = "fulll/actions/deployment@master"
   needs = [
     "with secrets",
     "with env",
@@ -8,7 +8,7 @@ action "deploy" {
 }
 
 action "with secrets" {
-  uses = "inextensodigital/actions/deployment@master"
+  uses = "fulll/actions/deployment@master"
   needs = [
     "bare",
   ]
@@ -19,13 +19,13 @@ action "with secrets" {
 }
 
 action "with env" {
-  uses = "inextensodigital/actions/deployment@master"
+  uses = "fulll/actions/deployment@master"
   env = {
     SUPER_ENV = "value"
   }
 }
 
 action "bare" {
-  uses = "inextensodigital/actions/deployment@master"
+  uses = "fulll/actions/deployment@master"
 }
 

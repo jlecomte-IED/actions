@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/inextensodigital/actions/github-workflow/parser"
+	"github.com/fulll/actions/github-workflow/parser"
 	"github.com/spf13/cobra"
 )
 

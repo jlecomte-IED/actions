@@ -9,7 +9,7 @@ Runs `php-cs-fixer` to lint php files. Running it by default in `dry-run` mode w
 
 ```
 action "Php cs fixer" {
-  uses = "inextensodigital/actions/php-cs-fixer@master"
+  uses = "fulll/actions/php-cs-fixer@master"
 }
 ```
 
@@ -29,7 +29,7 @@ jobs:
     - uses: actions/checkout@master
 
     - name: Php cs fixer
-      uses: inextensodigital/actions/php-cs-fixer@master
+      uses: fulll/actions/php-cs-fixer@master
   ```
 
 ## Advanced usage
@@ -41,7 +41,7 @@ For example, to effectively fix:
 
 ```
 action "Php cs fixer" {
-  uses = "inextensodigital/actions/zip@master"
+  uses = "fulll/actions/zip@master"
   run = ["php-cs-fixer", "fix"]
 }
 ```
@@ -62,6 +62,6 @@ jobs:
     - uses: actions/checkout@master
 
     - name: Php cs fixer
-      uses: inextensodigital/actions/php-cs-fixer@master
+      uses: fulll/actions/php-cs-fixer@master
       run: php-cs-fixer fix
 ```

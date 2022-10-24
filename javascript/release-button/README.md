@@ -5,7 +5,7 @@ Run as a github action workflow
 steps:
     - name: Generate button
       id: button
-      uses: inextensodigital/actions/javascript/release-button@v1-release
+      uses: fulll/actions/javascript/release-button@v1-release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
