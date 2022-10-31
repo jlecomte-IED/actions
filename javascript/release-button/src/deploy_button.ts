@@ -18,7 +18,7 @@ function generateButton(
 ) {
   if (!(deployEnv in DeployEnv)) {
     console.error(
-      'deployEnv variable should be equal to "dev", "preprod" or "prod" ',
+      'deployEnv variable should be equal to "dev", "preprod" or "prod" or "beta"',
     )
     process.exit(1)
   }

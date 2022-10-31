@@ -24,7 +24,7 @@ var DeployEnv;
 })(DeployEnv || (DeployEnv = {}));
 function generateButton(deployId, deployType, deployEnv) {
     if (!(deployEnv in DeployEnv)) {
-        console.error('deployEnv variable should be equal to "dev", "preprod" or "prod" ');
+        console.error('deployEnv variable should be equal to "dev", "preprod" or "prod" or "beta"');
         process.exit(1);
     }
     const { PRIVATE_KEY, GITHUB_REPOSITORY, GITHUB_REF } = process.env;
