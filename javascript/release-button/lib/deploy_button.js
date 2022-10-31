@@ -19,11 +19,12 @@ var DeployEnv;
 (function (DeployEnv) {
     DeployEnv["dev"] = "dev";
     DeployEnv["preprod"] = "preprod";
+    DeployEnv["beta"] = "beta";
     DeployEnv["prod"] = "prod";
 })(DeployEnv || (DeployEnv = {}));
 function generateButton(deployId, deployType, deployEnv) {
     if (!(deployEnv in DeployEnv)) {
-        console.error('deployEnv variable should be equal to "dev", "preprod" or "prod" ');
+        console.error('deployEnv variable should be equal to "dev", "preprod" or "prod" or "beta"');
         process.exit(1);
     }
     const { PRIVATE_KEY, GITHUB_REPOSITORY, GITHUB_REF } = process.env;
@@ -50,6 +51,9 @@ function generateButton(deployId, deployType, deployEnv) {
             break;
         case DeployEnv.preprod:
             buttonStyle = { name: 'Preprod', color: 'yellow' };
+            break;
+        case DeployEnv.beta:
+            buttonStyle = { name: 'Beta', color: 'purple' };
             break;
         case DeployEnv.prod:
             buttonStyle = { name: 'Production', color: 'orange' };
