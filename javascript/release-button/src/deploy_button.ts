@@ -7,6 +7,7 @@ import { stringify } from 'querystring'
 enum DeployEnv {
   dev = 'dev',
   preprod = 'preprod',
+  beta = 'beta',
   prod = 'prod',
 }
 
@@ -61,6 +62,9 @@ function generateButton(
     case DeployEnv.preprod:
       buttonStyle = { name: 'Preprod', color: 'yellow' }
       break
+    case DeployEnv.beta:
+        buttonStyle = { name: 'Beta', color: 'purple' }
+        break
     case DeployEnv.prod:
       buttonStyle = { name: 'Production', color: 'orange' }
       break

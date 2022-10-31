@@ -19,6 +19,7 @@ var DeployEnv;
 (function (DeployEnv) {
     DeployEnv["dev"] = "dev";
     DeployEnv["preprod"] = "preprod";
+    DeployEnv["beta"] = "beta";
     DeployEnv["prod"] = "prod";
 })(DeployEnv || (DeployEnv = {}));
 function generateButton(deployId, deployType, deployEnv) {
@@ -50,6 +51,9 @@ function generateButton(deployId, deployType, deployEnv) {
             break;
         case DeployEnv.preprod:
             buttonStyle = { name: 'Preprod', color: 'yellow' };
+            break;
+        case DeployEnv.beta:
+            buttonStyle = { name: 'Beta', color: 'purple' };
             break;
         case DeployEnv.prod:
             buttonStyle = { name: 'Production', color: 'orange' };
