@@ -1,4 +1,4 @@
-FROM php:8.1-cli-alpine
+FROM php:8.2-cli-alpine
 
 LABEL "com.github.actions.name"="Php cs fixer"
 LABEL "com.github.actions.description"="Lint php files against coding standards"
