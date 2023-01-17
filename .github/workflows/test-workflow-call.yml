@@ -1,0 +1,39 @@
+name: Reusable workflow example
+
+on:
+  workflow_call:
+    inputs:
+      stage:
+        required: true
+        type: string
+
+jobs:
+  create-deployment:
+    name: create deployment
+    runs-on: ubuntu-latest
+    steps:
+      - name: create deployment
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        run: |
+
+          gh api --method POST \
+            repos/${GITHUB_REPOSITORY}/deployments \
+            -H 'Accept: application/vnd.github+json' \
+            -F ref=${GITHUB_REF} \
+            -F environment=${{ inputs.stage }} \
+            -F production_environment=false \
+            -f required_contexts[] | jq -r '.id' > DEPLOY_ID
+
+          gh api \
+            --method POST \
+            repos/${GITHUB_REPOSITORY}/deployments/$(cat DEPLOY_ID)/statuses \
+            -H 'Accept: application/vnd.github+json' \
+            -F environment=${{ inputs.stage }} \
+            -F state='in_progress' \
+            -F description='Deployment in progress.'
+
+      - uses: actions/upload-artifact@master
+        with:
+          name: DEPLOY_ID
+          path: ./DEPLOY_ID
