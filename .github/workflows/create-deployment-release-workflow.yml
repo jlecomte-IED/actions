@@ -1,0 +1,106 @@
+## REUSABLE WORKFLOW
+name: Create deployment Workflow
+
+on:
+  workflow_call:
+    inputs:
+      stage:
+        required: true
+        type: string
+
+
+jobs:
+  create-deployment:
+    name: create deployment
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout sources
+        uses: actions/checkout@master
+
+      - name: create deployment
+        id: deployment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Deploy on $DEPLOY_ENV environment"
+
+          gh api --method POST \
+            repos/${GITHUB_REPOSITORY}/deployments \
+            -H 'Accept: application/vnd.github+json' \
+            -F ref=${GITHUB_REF} \
+            -F environment=production \
+            -F production_environment=false \
+            -f required_contexts[] | jq -r '.id' > DEPLOY_ID
+
+          id=$(cat DEPLOY_ID)
+          echo ::set-output name=deploy_id::$id
+
+      - name: retrieve TERRAFORM_CHANGES
+        uses: actions/download-artifact@master
+        with:
+          name: TERRAFORM_CHANGES
+          path: .
+
+      - name: generate release button
+        id: button
+        uses: fulll/actions/javascript/release-button@v1-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+        with:
+          deploy_id: ${{ steps.deployment.outputs.deploy_id }}
+
+      - name: update release note
+        env:
+          DEPLOY_BUTTON_CODE: ${{ steps.button.outputs.release-button }}
+          TAG_NAME: ${{ github.event.release.tag_name }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          changelog(){
+            printf "%s\n" "### $1 - \`$(jq -r .version ./$1/package.json)\`"
+
+            if [[ ! -z ${PREVIOUS_RELEASE} ]]; then
+              since="${PREVIOUS_RELEASE}..."
+            fi
+            git log --pretty=oneline --abbrev-commit $since ./$1 | sed -E 's/([a-f0-9]+) (.*)/- `\1`: \2/'
+            printf "\n"
+          }
+
+          gh release list -L 2 -R $GITHUB_REPOSITORY | cut -f 3 | tail -n 1 > list_releases
+          num_releases=$(cat list_releases | wc -l)
+
+          export PREVIOUS_RELEASE=$([ $num_releases -gt 1 ] && cat list_releases | tail -n 1)
+          gh release view $TAG_NAME | awk "/## What's Changed/{p=1}p" > release_note.md
+
+          printf "
+          ## commits
+          %s
+
+          ## infrastructure 
+          ## 🚧 Terraform Changes
+
+          %s
+
+
+          ## deployment status
+
+          ### Deploy to production :rocket:
+          
+          %s
+          " "$(changelog back-end)" "$(cat TERRAFORM_CHANGES)" "$DEPLOY_BUTTON_CODE"  >> release_note.md
+
+          gh release edit $TAG_NAME --notes-file release_note.md
+
+          # Edit previous release
+          if [ ! -z $PREVIOUS_RELEASE ]
+          then
+            substitute() {
+              perl -i -0pe "s/$1/$2/s" $3
+            }
+
+            gh release view $PREVIOUS_RELEASE > release.md
+            #Remove deploy button
+            substitute '## Deploy to production :rocket:.*\n[^\n]+\n' "## :negative_squared_cross_mark: Never Deployed\n" release.md
+
+            gh release edit $PREVIOUS_RELEASE --notes-file release.md
+          fi
