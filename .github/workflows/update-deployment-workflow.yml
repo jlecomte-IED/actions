@@ -24,7 +24,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh api --method POST \
-            repos/${GITHUB_REPOSITORY}/deployments/${DEPLOY_ID}/statuses \
+            repos/${GITHUB_REPOSITORY}/deployments/$(cat DEPLOY_ID)/statuses \
             -H "Accept: application/vnd.github+json" \
             -F environment=${{ inputs.stage }} \
             -F state='success' \
