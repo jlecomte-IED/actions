@@ -30,7 +30,7 @@ jobs:
             -F state='success' \
             -F description='Deployment success.'
       - name: update release note
-        if: inputs.stage == 'prod'
+        if: ${{ inputs.stage == 'prod' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
