@@ -1,0 +1,23 @@
+## REUSABLE WORKFLOW
+name: automatic review master → dev PR
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+  check_suite:
+    types:
+      - completed
+
+jobs:
+  auto-review-master-dev-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: review master → dev PR
+        if: github.event.pull_request.title == 'master → dev'
+        uses: andrewmusgrave/automatic-pull-request-review@0.0.5
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          event: APPROVE
+          body: 'Thank you fulll bot 🎊'

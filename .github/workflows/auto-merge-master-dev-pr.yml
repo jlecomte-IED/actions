@@ -1,0 +1,21 @@
+## REUSABLE WORKFLOW
+name: automatic merge pull request
+
+on:
+  pull_request_review:
+    types:
+      - submitted
+  check_suite:
+    types:
+      - completed
+  status: {}
+
+jobs:
+  auto-merge-master-dev-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: merge pull request
+        uses: pascalgn/automerge-action@v0.15.5
+        env:
+          GITHUB_TOKEN: ${{ secrets.IEDBOT_TOKEN }}
+          MERGE_LABELS: "automerge"

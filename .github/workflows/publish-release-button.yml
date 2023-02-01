@@ -1,4 +1,6 @@
+## REUSABLE WORKFLOW
 name: publish release-button
+
 on:
   push:
     branches:

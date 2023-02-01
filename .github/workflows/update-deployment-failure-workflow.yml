@@ -1,5 +1,5 @@
 ## REUSABLE WORKFLOW
-name: Update deployment Workflow
+name: Update deployment failure Workflow
 
 on:
   workflow_call:
@@ -8,8 +8,7 @@ on:
         required: true
         type: string
 
-jobs:
-  update-deployment:
+  update-deployment-failure:
     name: Update deployment
     runs-on: ubuntu-latest
     steps:
@@ -19,7 +18,8 @@ jobs:
           name: DEPLOY_ID
           path: .
 
-      - name: "update deployment status [SUCCESS]"
+      - name: "update deployment status [FAILURE]"
+        if: failure()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -27,11 +27,11 @@ jobs:
             repos/${GITHUB_REPOSITORY}/deployments/$(cat DEPLOY_ID)/statuses \
             -H "Accept: application/vnd.github+json" \
             -F environment=${{ inputs.stage }} \
-            -F state='success' \
-            -F description='Deployment success.'
+            -F state='failure' \
+            -F description='Deployment failed.'
 
       - name: update release note
-        if: ${{ inputs.stage == 'prod' }}
+        if: ${{ failure() && inputs.stage == 'prod' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -40,8 +40,7 @@ jobs:
           }
           LATEST_RELEASE=$(gh release list -L 1 -R $GITHUB_REPOSITORY | cut -f 3)
           gh release view $LATEST_RELEASE --json body --jq '.body' > release.md
+          # Remove deploy button
           now=$(date '+%Y-%m-%d %H:%M:%S')
-          #Remove deploy button
-          substitute '### :truck: Deployment in Progress...' "## :rocket: Deployed on \\\`$now\\\`" release.md
-          gh release edit $LATEST_RELEASE --notes-file release.md
-            
+          substitute '### :truck: Deployment in Progress...' "## :x: Deployement failed on \\\`$now\\\`" release.md
+          gh release edit $TAG_NAME --notes-file release.md
