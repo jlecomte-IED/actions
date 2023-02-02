@@ -1,5 +1,8 @@
 # README
 
+Your repository must be configured with `IEDBOT_TOKEN` and `GITHUB_TOKEN` secrets to use these actions.
+
+
 ## Deployment status
 
 In order to follow deploy status, you must implement these steps in your Github actions:
@@ -40,11 +43,11 @@ Add these steps on your first job in order to create a deployment in progress:
 At the end of the job, add this step to mark the deployment as succeed:
 
 ```yaml 
-  update-deployment-call:
-    needs: [ create-deployment-call,deploy,expose-env-var ]
-    uses: fulll/actions/.github/workflows/update-deployment-workflow.yml@master
-    with:
-      stage: ${{ needs.expose-env-var.outputs.stage }}
+    update-deployment-call:
+        needs: [ create-deployment-call,deploy,expose-env-var ]
+        uses: fulll/actions/.github/workflows/update-deployment-workflow.yml@master
+        with:
+          stage: ${{ needs.expose-env-var.outputs.stage }}
 ```
 
 :information_source: On `prod` context it will also add the deploy button on the latest release of your project.
@@ -54,25 +57,26 @@ At the end of the job, add this step to mark the deployment as succeed:
 In some cases, your workflow can failed, you can use this step to update your deployment status:
 
 ```yaml 
-  update-deployment-failure-call:
-    needs: [ create-deployment-call,deploy,expose-env-var ]
-    uses: fulll/actions/.github/workflows/update-deployment-failure-workflow.yml@master
-    with:
-      stage: ${{ needs.expose-env-var.outputs.stage }}
+    update-deployment-failure-call:
+        needs: [ create-deployment-call,deploy,expose-env-var ]
+        uses: fulll/actions/.github/workflows/update-deployment-failure-workflow.yml@master
+        with:
+          stage: ${{ needs.expose-env-var.outputs.stage }}
 ```
 
 :information_source: On `prod` context it will also remove the deploy button on the latest release of your project.
 
+
 ## Automatic "master → dev" pull request 
 
-Add theses 3 Github actions in your repository to add a new automatic workflow that will automatically:  
-1. Create a new "master → dev" PR when master branch is updated.
-2. Approve this PR to unlock repository minimum requirement for merge.
-3. Merge the PR. 
+Add this Github action in your repository to add a new automatic workflow that will automatically:  
+1. Create a new "master → dev" pull request when master branch is updated.
+2. Enable the automatic merge on the pull request.
+3. Approve this PR to unlock repository minimum requirement for merge.
 
-Path: `.github/workflows/auto-create-master-dev-pr.yml`
+Path: `.github/workflows/automatic-master-dev-pr.yml`
 ```yaml
-name: automatic create master → dev PR
+name: automatic master → dev PR
 
 on:
   push:
@@ -80,38 +84,6 @@ on:
       - master
 
 jobs:
-  auto-create-master-dev-pr:
-    uses: fulll/actions/.github/workflows/auto-create-master-dev-pr.yml@master
-```
-
-Path: `.github/workflows/auto-review-master-dev-pr.yml`
-```yaml
-name: automatic review master → dev PR
-
-on:
-  push:
-    branches:
-      - master
-
-jobs:
-  auto-approve-master-dev-pr:
-    uses: fulll/actions/.github/workflows/auto-review-master-dev-pr.yml@master
-```
-
-Path: `.github/workflows/auto-merge-master-dev-pr.yml`
-```yaml
-name: automatic merge pull request
-
-on:
-  pull_request_review:
-    types:
-      - submitted
-  check_suite:
-    types:
-      - completed
-  status: {}
-
-jobs:
-  auto-merge-master-dev-pr:
-    uses: fulll/actions/.github/workflows/auto-merge-master-dev-pr.yml@master
+  automatic-master-dev-pr:
+    uses: fulll/actions/.github/workflows/automatic-master-dev-pr.yml@master
 ```

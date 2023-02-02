@@ -7,7 +7,7 @@ on:
       - master
 
 jobs:
-  auto-create-master-dev-pr:
+  automatic-master-dev-pr:
     name: create master → dev PR
     runs-on: ubuntu-latest
     steps:
@@ -20,7 +20,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.IEDBOT_TOKEN }}
         run: |
           gh pr create --base dev --head master --title "master → dev" --body "" --label automerge --repo $GITHUB_REPOSITORY > pull_request.md
-          PR_NUMBER=$( grep -EoP '\/pull\/([0-9]+)$' pull_request.md )
+          PR_NUMBER=$( basename $(cat pull_request.md) )
           echo "pr_number=${PR_NUMBER}" >> $GITHUB_OUTPUT
 
       - name: enable auto-merge
