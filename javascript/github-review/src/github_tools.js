@@ -31,7 +31,7 @@ class GithubTools {
   }
 
   initiateOctokit(token) {
-    this.octokit = new github.GitHub(token);
+    this.octokit = github.getOctokit(token).rest;
   }
 
   initiateGraphQLClient(token) {
@@ -382,7 +382,7 @@ class GithubTools {
       username
     })
 
-    core.info(`⛔️ User: ${username} have been removed from ${owner}/${repo}`)
+    core.info(`⛔️ User: ${username} have been removed from ${this.owner}/${repo}`)
   }
 
 }

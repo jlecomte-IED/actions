@@ -25,6 +25,9 @@ inputs:
     description: 'If directAccessRemediation is true, directs access are removed'
     required: false
     default: false
+  directAccessExcludeMembers:
+    description: 'Members allow to have direct access'
+    required: false
   labels:
     description: 'Issue labels'
     required: false

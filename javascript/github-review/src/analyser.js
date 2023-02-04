@@ -59,10 +59,9 @@ class Analyser {
         if(members.length > 0){
           repositoriesWithDirectAccess.push({
             name: repo,
-            members 
+            members
           });
         }
-        
       }
     }
     core.info(`✅ Finished Search for members with direct access.`);

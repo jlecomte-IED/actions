@@ -234,7 +234,6 @@ class OrgDataCollector {
     //Posting analysis
     body = `### Member(s) with no name:`;
     this.analyser.analysisResults.membersWithNoName.forEach(member => body = body + `\n- ${member}`);
-    console.log(body);
     await this.githubTools.postCommentToIssue(body);
 
 
@@ -243,7 +242,6 @@ class OrgDataCollector {
       body = body + `\n#### ${repo.name}`;
       repo.members.forEach(member => body = body + `\n- ${member.login}`);
     });
-    console.log(body);
     await this.githubTools.postCommentToIssue(body);
   }
 
@@ -275,7 +273,7 @@ class OrgDataCollector {
     ]);
 
     //Create analysis files
-    if (this.options.exportAnalysis == true) {
+    if (this.options.exportAnalysis) {
       await writeFileAsync(
         analysis_filePath,
         JSON.stringify(this.analyser.analysisResults)
@@ -286,7 +284,7 @@ class OrgDataCollector {
       ]);
     }
 
-    if (this.options.directAccessDeletion) accessRemover(this.githubTools, this.analyser.analysisResults.membersWithDirectAccess);
+    if (this.options.directAccessDeletion) await accessRemover(this.githubTools, this.analyser.analysisResults.repositoriesWithDirectAccess, this.options.directAccessExcludeMembers);
 
     if (this.options.postToIssue) {
       // Posting review
