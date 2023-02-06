@@ -1,0 +1,36 @@
+## REUSABLE WORKFLOW
+name: automatic master → dev PR
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  automatic-master-dev-pr:
+    name: create master → dev PR
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout sources
+        uses: actions/checkout@master
+
+      - name: create pr
+        id: create-pr
+        env:
+          GITHUB_TOKEN: ${{ secrets.IEDBOT_TOKEN }}
+        run: |
+          gh pr create --base dev --head master --title "master → dev" --body "" --label automerge --repo $GITHUB_REPOSITORY > pull_request.md
+          PR_NUMBER=$( basename $(cat pull_request.md) )
+          echo "pr_number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+
+      - name: enable auto-merge
+        id: enable-auto-merge
+        env:
+          GITHUB_TOKEN: ${{ secrets.IEDBOT_TOKEN }}
+        run: gh pr merge ${{ steps.create-pr.outputs.pr_number }} --auto --merge --repo $GITHUB_REPOSITORY
+
+      - name: review pr
+        id: review-pr
+        env:
+          GITHUB_TOKEN: ${{ secrets.IEDBOT_TOKEN }}
+        run: gh pr review ${{ steps.create-pr.outputs.pr_number }} --approve --body "Thank you fulll bot 🎊" --repo $GITHUB_REPOSITORY
