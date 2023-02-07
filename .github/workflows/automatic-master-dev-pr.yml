@@ -2,9 +2,7 @@
 name: automatic master → dev PR
 
 on:
-  push:
-    branches:
-      - master
+  workflow_call:
 
 jobs:
   automatic-master-dev-pr:
