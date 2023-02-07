@@ -1,0 +1,34 @@
+## REUSABLE WORKFLOW
+name: Security
+
+on:
+  workflow_call:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/cache@v2
+        id: cache-db
+        with:
+          path: ~/.symfony/cache
+          key: db
+
+      - name: Run dependencies security checker
+        id: security-check
+        working-directory: ./
+        run: |
+          docker run --rm -v $(pwd):$(pwd) -w $(pwd) ghcr.io/symfony-cli/symfony-cli:v5 check:security --format=markdown 2>&1 | tee security.report
+          echo "report<<EOF" >> $GITHUB_OUTPUT
+          echo "$(awk '/Symfony Security Check Report/, 0' security.report)" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Report dependencies security vulnerabilities
+        uses: phulsechinmay/rewritable-pr-comment@v0.2.1
+        with:
+          message: ${{ steps.security-check.outputs.report }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMENT_IDENTIFIER: 'php-security-checker-action'
