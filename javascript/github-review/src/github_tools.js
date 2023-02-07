@@ -31,7 +31,7 @@ class GithubTools {
   }
 
   initiateOctokit(token) {
-    this.octokit = new github.GitHub(token);
+    this.octokit = github.getOctokit(token).rest;
   }
 
   initiateGraphQLClient(token) {
@@ -372,6 +372,17 @@ class GithubTools {
         state,
       });
     return result;
+  }
+
+  //Remove direct access to repository collaborator. (Org repos Only)
+  async removeDirectAccess(repo, username){
+    await this.octokit.repos.removeCollaborator({
+      owner: this.owner,
+      repo,
+      username
+    })
+
+    core.info(`⛔️ User: ${username} have been removed from ${this.owner}/${repo}`)
   }
 
 }

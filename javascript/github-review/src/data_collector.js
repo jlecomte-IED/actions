@@ -6,6 +6,7 @@ const dateFormat = require("date-fns");
 
 const Analyser = require("./analyser");
 const GithubTools = require("./github_tools");
+const { accessRemover } = require("./access_remover");
 const { csvToMarkdown } = require("csv-to-markdown-table/lib/CsvToMarkdown");
 
 
@@ -214,42 +215,7 @@ class OrgDataCollector {
     });
   }
 
-  async endOrgReview() {
-    await this.normalizeResult();
-    const result_json = this.orgNormalizedData;
-
-    if (!result_json.length) {
-      return core.setFailed(`⚠️  No data collected. Stopping action`);
-    }
-
-    /**********************************
-    *** Create Artifact CSV and JSON ***
-    **********************************/
-    const json_filePath = `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}-${dateFormat.format(new Date(), 'yyyy-MM-dd')}.json`
-
-    await writeFileAsync(
-      json_filePath,
-      JSON.stringify(result_json)
-    );
-
-    await this.githubTools.createandUploadArtifacts([
-      json_filePath,
-    ]);
-
-    //Starting analysis
-    await this.analyser.startAnalysis();
-
-    // Posting review
-    await this.postingOrgReview();
-
-    process.exit();
-  }
-
   async postingOrgReview() {
-    if (!this.options.postToIssue) {
-      return core.debug("skipping posting review in issue");
-    }
-
     let body;
 
     await this.githubTools.findReviewIssue();
@@ -268,7 +234,6 @@ class OrgDataCollector {
     //Posting analysis
     body = `### Member(s) with no name:`;
     this.analyser.analysisResults.membersWithNoName.forEach(member => body = body + `\n- ${member}`);
-    console.log(body);
     await this.githubTools.postCommentToIssue(body);
 
 
@@ -277,8 +242,58 @@ class OrgDataCollector {
       body = body + `\n#### ${repo.name}`;
       repo.members.forEach(member => body = body + `\n- ${member.login}`);
     });
-    console.log(body);
     await this.githubTools.postCommentToIssue(body);
+  }
+
+  async endOrgReview() {
+    await this.normalizeResult();
+    const result_json = this.orgNormalizedData;
+
+    if (!result_json.length) {
+      return core.setFailed(`⚠️  No data collected. Stopping action`);
+    }
+
+    /**********************************
+    *** Create Artifact CSV and JSON ***
+    **********************************/
+    const json_filePath = `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}-${dateFormat.format(new Date(), 'yyyy-MM-dd')}.json`
+    const analysis_filePath = `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}-analysis-${dateFormat.format(new Date(), 'yyyy-MM-dd')}.json`
+
+    //Starting analysis
+    await this.analyser.startAnalysis();
+
+    await writeFileAsync(
+      json_filePath,
+      JSON.stringify(result_json)
+    );
+
+    // Upload artifacts
+    await this.githubTools.createandUploadArtifacts([
+      json_filePath,
+    ]);
+
+    //Create analysis files
+    if (this.options.exportAnalysis) {
+      await writeFileAsync(
+        analysis_filePath,
+        JSON.stringify(this.analyser.analysisResults)
+      );
+
+      await this.githubTools.createandUploadArtifacts([
+        analysis_filePath,
+      ]);
+    }
+
+    if (this.options.directAccessDeletion) await accessRemover(this.githubTools, this.analyser.analysisResults.repositoriesWithDirectAccess, this.options.directAccessExcludeMembers);
+
+    if (this.options.postToIssue) {
+      // Posting review
+      await this.postingOrgReview();
+    } else {
+      return core.debug("Skipping posting review in issue");
+    }
+
+    process.exit();
   }
 }
 

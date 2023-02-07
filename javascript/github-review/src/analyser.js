@@ -10,8 +10,9 @@ class Analyser {
   async startAnalysis() {
     core.info(`🔍 Starting Analysis...`);
     this.analysisResults.membersWithNoName = this.getMembersWithNameNotDefined();
-    this.analysisResults.membersWithDirectAccess = await this.getMembersWithDirectAccess();
+    this.analysisResults.repositoriesWithDirectAccess = await this.repositoriesWithDirectAccess();
     core.info(`✅ Finished Analysis...`);
+
   }
 
   getMembersWithNameNotDefined() {
@@ -30,17 +31,16 @@ class Analyser {
     return membersWithNoName;
   }
 
-  async getMembersWithDirectAccess() {
+  async repositoriesWithDirectAccess() {
     core.info(`🔍 Search for members with direct access...`);
     let repositories = [];
-    let membersWithDirectAccess = [];
+    let repositoriesWithDirectAccess = [];
 
     // List all repos
     this.normalizedResult.forEach(team => {
       team.repositories.forEach(repo => {
-        const [owner, r] = repo.split("/");
-        if (!repositories.includes(r)) {
-          repositories.push(r);
+        if (!repositories.includes(repo)) {
+          repositories.push(repo);
         }
       })
     });
@@ -50,23 +50,25 @@ class Analyser {
     for (const repo of repositories) {
       let members = [];
       try {
-        members = await this.githubTools.listRepoCollaborators(repo, "direct")
+        const [, r] = repo.split("/");
+        members = await this.githubTools.listRepoCollaborators(r, "direct")
       } catch (error) {
         core.info(`${repo} = ${error.message}`);
       }
       finally{
         if(members.length > 0){
-          membersWithDirectAccess.push({
+          repositoriesWithDirectAccess.push({
             name: repo,
-            members 
+            members
           });
         }
-        
       }
     }
     core.info(`✅ Finished Search for members with direct access.`);
-    return membersWithDirectAccess;
+    return repositoriesWithDirectAccess;
   }
+
+  async 
 }
 
 module.exports = Analyser
