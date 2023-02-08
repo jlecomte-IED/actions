@@ -43,9 +43,9 @@ Add these steps on your first job in order to create a deployment in progress:
 At the end of the job, add this step to mark the deployment as succeed:
 
 ```yaml 
-    update-deployment-call:
+    update-deployment-on-success:
         needs: [ create-deployment-call,deploy,expose-env-var ]
-        uses: fulll/actions/.github/workflows/update-deployment-workflow.yml@master
+        uses: fulll/actions/.github/workflows/update-deployment-on-success-workflow.yml@master
         with:
           stage: ${{ needs.expose-env-var.outputs.stage }}
 ```
@@ -57,9 +57,9 @@ At the end of the job, add this step to mark the deployment as succeed:
 In some cases, your workflow can failed, you can use this step to update your deployment status:
 
 ```yaml 
-    update-deployment-failure-call:
+    update-deployment-on-failure:
         needs: [ create-deployment-call,deploy,expose-env-var ]
-        uses: fulll/actions/.github/workflows/update-deployment-failure-workflow.yml@master
+        uses: fulll/actions/.github/workflows/update-deployment-on-failure-workflow.yml@master
         with:
           stage: ${{ needs.expose-env-var.outputs.stage }}
 ```

@@ -9,7 +9,7 @@ on:
         type: string
 
 jobs:
-  update-deployment:
+  update-deployment-on-success:
     name: Update deployment
     runs-on: ubuntu-latest
     steps:
