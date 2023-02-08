@@ -29,7 +29,7 @@ Add these steps on your first job in order to create a deployment in progress:
         steps:
           - run: echo "Exposing env vars"
 
-    create-deployment-call:
+    create-deployment:
         needs: [expose-env-var]
         uses: fulll/actions/.github/workflows/create-deployment-workflow.yml@master
         with: 
@@ -38,34 +38,17 @@ Add these steps on your first job in order to create a deployment in progress:
 
 ### Update deployment status
 
-#### Success
-
-At the end of the job, add this step to mark the deployment as succeed:
+At the end of the job, add this step to mark the deployment as succeed or failed:
 
 ```yaml 
-    update-deployment-on-success:
+    update-deployment:
         needs: [ create-deployment-call,deploy,expose-env-var ]
-        uses: fulll/actions/.github/workflows/update-deployment-on-success-workflow.yml@master
+        uses: fulll/actions/.github/workflows/update-deployment-workflow.yml@master
         with:
           stage: ${{ needs.expose-env-var.outputs.stage }}
 ```
 
-:information_source: On `prod` context it will also add the deploy button on the latest release of your project.
-
-#### Failure
-
-In some cases, your workflow can failed, you can use this step to update your deployment status:
-
-```yaml 
-    update-deployment-on-failure:
-        needs: [ create-deployment-call,deploy,expose-env-var ]
-        uses: fulll/actions/.github/workflows/update-deployment-on-failure-workflow.yml@master
-        with:
-          stage: ${{ needs.expose-env-var.outputs.stage }}
-```
-
-:information_source: On `prod` context it will also remove the deploy button on the latest release of your project.
-
+:information_source: On `prod` context it will also add/remove the deploy button on the latest release of your project.
 
 ## Automatic "master → dev" pull request 
 
