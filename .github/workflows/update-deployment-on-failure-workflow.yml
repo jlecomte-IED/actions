@@ -8,7 +8,7 @@ on:
         required: true
         type: string
 jobs:
-  update-deployment-failure:
+  update-deployment-on-failure:
     name: Update deployment
     runs-on: ubuntu-latest
     steps:
