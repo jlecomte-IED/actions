@@ -1,0 +1,58 @@
+## REUSABLE WORKFLOW
+name: Prepare prod deployment workflow
+
+on:
+  workflow_call:
+    inputs:
+      stage:
+        required: true
+        type: string
+
+jobs:
+  prepare-deployment:
+    name: prepare deployment
+    runs-on: ubuntu-latest
+    steps:
+      - name: should deploy
+        if: github.event.deployment.environment != 'production' ||  github.event.deployment_status.state != 'in_progress'
+        run: exit 1
+
+      - name: retrieve release
+        run: | 
+          echo "Exposing env vars"
+          latest_release=$(gh release list --exclude-drafts --exclude-pre-releases -L 1 -R '$GITHUB_REPOSITORY' | cut -f 3)
+          echo "LATEST_RELEASE=$latest_release" >> $GITHUB_ENV
+
+      - name: checkout sources
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: retrieve DEPLOY_ID
+        uses: actions/download-artifact@master
+        with:
+          name: DEPLOY_ID
+          path: .
+
+      - name: "update deployment status [IN_PROGRESS]"
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        run: |
+          gh api --method POST \
+            -H "Accept: application/vnd.github+json" \
+            /repos/$GITHUB_REPOSITORY/deployments/$(cat DEPLOY_ID)/statuses \
+            -F environment=${{inputs.stage}} \
+            -F state='in_progress' \
+            -F description='Deployment in progress.'
+
+      - name: update release note
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          substitute() {
+            perl -i -0pe "s/$1/$2/s" $3
+          }
+          gh release view --json body --jq '.body' $LATEST_RELEASE > release.md
+          #Remove deploy button
+          substitute '### Deploy to production :rocket:.*\n[^\n]+\n' "### :truck: Deployment in Progress..." release.md
+          gh release edit $LATEST_RELEASE --notes-file release.md
