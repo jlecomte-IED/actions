@@ -75,7 +75,8 @@ jobs:
   prepare-deployment:
     needs: [expose-env-vars]
     uses: fulll/actions/.github/workflows/prepare-prod-deployment-workflow.yml@master
-    stage: ${{ needs.expose-env-vars.outputs.stage }}
+    with:
+      stage: ${{ needs.expose-env-vars.outputs.stage }}
 ```
 
 ## Automatic "master → dev" pull request
