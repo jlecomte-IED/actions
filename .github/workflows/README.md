@@ -79,7 +79,7 @@ jobs:
 
 ## Automatic "master → dev" pull request
 
-:warning: Your repository must be configured with personnal token in secret to use this action.
+:warning: Your repository must be configured with bot token secret to use this action.
 
 Add this Github action in your repository to add a new automatic workflow that will automatically:
 
