@@ -100,4 +100,6 @@ on:
 jobs:
   automatic-master-dev-pr:
     uses: fulll/actions/.github/workflows/automatic-master-dev-pr.yml@master
+    secrets:
+      envPAT: ${{ secrets.envPAT }}
 ```
