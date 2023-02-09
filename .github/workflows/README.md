@@ -79,7 +79,7 @@ jobs:
 
 ## Automatic "master → dev" pull request
 
-:warning: Your repository must be configured with `IEDBOT_TOKEN` secret to use this action.
+:warning: Your repository must be configured with personnal token in secret to use this action.
 
 Add this Github action in your repository to add a new automatic workflow that will automatically:
 
@@ -101,5 +101,5 @@ jobs:
   automatic-master-dev-pr:
     uses: fulll/actions/.github/workflows/automatic-master-dev-pr.yml@master
     secrets:
-      envPAT: ${{ secrets.envPAT }}
+      botToken: ${{ secrets.BOT_TOKEN }}
 ```
