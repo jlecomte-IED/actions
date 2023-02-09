@@ -79,6 +79,8 @@ jobs:
 
 ## Automatic "master → dev" pull request
 
+:warning: Your repository must be configured with `IEDBOT_TOKEN` secret to use this action.
+
 Add this Github action in your repository to add a new automatic workflow that will automatically:
 
 1. Create a new "master → dev" pull request when master branch is updated.
