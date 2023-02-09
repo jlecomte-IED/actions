@@ -33,5 +33,5 @@ jobs:
       - name: review pr
         id: review-pr
         env:
-          GITHUB_TOKEN: ${{ secrets.botToken }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh pr review ${{ steps.create-pr.outputs.pr_number }} --approve --repo $GITHUB_REPOSITORY
