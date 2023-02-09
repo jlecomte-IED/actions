@@ -1,7 +1,5 @@
 # README
 
-Your repository must be configured with `IEDBOT_TOKEN` and `GITHUB_TOKEN` secrets to use these actions.
-
 ## Deployment status
 
 In order to follow deploy status, you must implement these steps in your Github actions:
