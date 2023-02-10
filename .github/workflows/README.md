@@ -116,7 +116,7 @@ jobs:
       botToken: ${{ secrets.BOT_TOKEN }}
 ```
 
-You can change branches. Add inputs like below to change the base branch and branch you want to automatically merge.
+Add inputs like below to change the branches that you want to automatically merge.
 
 ```yml
 name: automatic master → dev PR
