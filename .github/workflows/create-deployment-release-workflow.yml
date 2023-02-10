@@ -68,7 +68,7 @@ jobs:
           num_releases=$(cat list_releases | wc -l)
 
           export PREVIOUS_RELEASE=$([ $num_releases -gt 1 ] && cat list_releases | tail -n 1)
-          gh release view $TAG_NAME --json body --jq '.body' | awk "/## What's Changed/{p=1}p" > release_note.md
+          gh release view $TAG_NAME --json body --jq '.body' > release_note.md
 
           printf "
           ## commits
