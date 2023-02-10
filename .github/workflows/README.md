@@ -18,8 +18,8 @@ In order to follow deploy status, you must implement these steps in your Github 
 Add these steps on your first job in order to create a deployment in progress:
 
 ```yaml
-expose-env-var:
-  name: expose env var
+expose-env-vars:
+  name: expose env vars
   runs-on: ubuntu-latest
   outputs:
     stage: ${{ env.TF_VAR_stage }}
@@ -27,10 +27,10 @@ expose-env-var:
     - run: echo "Exposing env vars"
 
 create-deployment:
-  needs: [expose-env-var]
+  needs: [expose-env-vars]
   uses: fulll/actions/.github/workflows/create-deployment-workflow.yml@master
   with:
-    stage: ${{ needs.expose-env-var.outputs.stage }}
+    stage: ${{ needs.expose-env-vars.outputs.stage }}
 ```
 
 ### Update deployment status
@@ -39,10 +39,10 @@ At the end of the job, add this step to mark the deployment as succeed or failed
 
 ```yaml
 update-deployment:
-  needs: [create-deployment-call, deploy, expose-env-var]
+  needs: [create-deployment, deploy, expose-env-vars]
   uses: fulll/actions/.github/workflows/update-deployment-workflow.yml@master
   with:
-    stage: ${{ needs.expose-env-var.outputs.stage }}
+    stage: ${{ needs.expose-env-vars.outputs.stage }}
 ```
 
 :information_source: On `prod` context it will also add/remove the deploy button on the latest release of your project.
