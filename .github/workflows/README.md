@@ -143,7 +143,7 @@ on:
 
 jobs:
   automatic-pr:
-    uses: fulll/actions/.github/workflows/automatic-pr.yml@master
+    uses: fulll/actions/.github/workflows/automatic-pr-workflow.yml@master
     secrets:
       botToken: ${{ secrets.BOT_TOKEN }}
     inputs:
