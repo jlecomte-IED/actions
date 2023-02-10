@@ -3,10 +3,9 @@ name: Create deployment Workflow
 
 on:
   workflow_call:
-    inputs:
-      stage:
+    secrets:
+      PRIVATE_KEY:
         required: true
-        type: string
 
 jobs:
   create-deployment:

@@ -47,6 +47,18 @@ update-deployment:
 
 :information_source: On `prod` context it will also add/remove the deploy button on the latest release of your project.
 
+### Init production deployment (`release`)
+
+Add these step in `release` workflow to create a deployment in progress for production deployment:
+
+```yaml
+  create-deployment-release:
+    needs: [ expose-env-vars, plan-infrastructure ]
+    uses: fulll/actions/.github/workflows/create-deployment-release-workflow.yml@master
+    secrets:
+      PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+```
+
 ### Prepare production deployment (`deploy prod`)
 
 Update current release and deployment to `in_progress`
