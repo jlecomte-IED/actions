@@ -54,16 +54,6 @@ jobs:
           TAG_NAME: ${{ github.event.release.tag_name }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          changelog(){
-            printf "%s\n" "### $1 - \`$(jq -r .version ./$1/package.json)\`"
-
-            if [[ ! -z ${PREVIOUS_RELEASE} ]]; then
-              since="${PREVIOUS_RELEASE}..."
-            fi
-            git log --pretty=oneline --abbrev-commit $since ./$1 | sed -E 's/([a-f0-9]+) (.*)/- `\1`: \2/'
-            printf "\n"
-          }
-
           gh release list -L 2 -R $GITHUB_REPOSITORY | cut -f 3 | tail -n 1 > list_releases
           num_releases=$(cat list_releases | wc -l)
 
@@ -71,21 +61,19 @@ jobs:
           gh release view $TAG_NAME --json body --jq '.body' > release_note.md
 
           printf "
-          ## commits
+          
+          ## Infrastructure 
+          
+          ### 🚧 Terraform Changes
+
           %s
 
-          ## infrastructure 
-          ## 🚧 Terraform Changes
-
-          %s
-
-
-          ## deployment status
+          ## Deployment status
 
           ### Deploy to production :rocket:
           
           %s
-          " "$(changelog back-end)" "$(cat TERRAFORM_CHANGES)" "$DEPLOY_BUTTON_CODE"  >> release_note.md
+          " "$(cat TERRAFORM_CHANGES)" "$DEPLOY_BUTTON_CODE"  >> release_note.md
 
           gh release edit $TAG_NAME --notes-file release_note.md
 
