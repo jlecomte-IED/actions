@@ -116,22 +116,37 @@ jobs:
       botToken: ${{ secrets.BOT_TOKEN }}
 ```
 
-Add inputs like below to change the branches that you want to automatically merge.
+## Automatic pull request
+
+:warning: Your repository must be configured with bot token secret to use this action.
+
+Add this Github action in your repository to add a new automatic workflow that will automatically :
+
+1. Create a new pull request.
+2. Enable the automatic merge on the pull request.
+3. Approve this PR to unlock repository minimum requirement for merge.
+
+This workflow add options to select which branches you want to merge.
+
+`head_branch` : The updated branch
+`base_branch` : The branch to merge
+
+The workflow will be triggered on each `head_branch` update and will merge this branch into `base_branch`
 
 ```yml
-name: automatic master → dev PR
+name: automatic main → dev PR
 
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
-  automatic-master-dev-pr:
-    uses: fulll/actions/.github/workflows/automatic-master-dev-pr.yml@master
+  automatic-pr:
+    uses: fulll/actions/.github/workflows/automatic-pr.yml@master
     secrets:
       botToken: ${{ secrets.BOT_TOKEN }}
     inputs:
       base_branch: dev
-      head_brach: main
+      head_branch: main
 ```
