@@ -115,3 +115,23 @@ jobs:
     secrets:
       botToken: ${{ secrets.BOT_TOKEN }}
 ```
+
+You can change branches. Add inputs like below to change the base branch and branch you want to automatically merge.
+
+```yml
+name: automatic master → dev PR
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  automatic-master-dev-pr:
+    uses: fulll/actions/.github/workflows/automatic-master-dev-pr.yml@master
+    secrets:
+      botToken: ${{ secrets.BOT_TOKEN }}
+    inputs:
+      base_branch: dev
+      head_brach: main
+```
