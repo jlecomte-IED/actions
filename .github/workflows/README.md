@@ -133,5 +133,5 @@ jobs:
       botToken: ${{ secrets.BOT_TOKEN }}
     inputs:
       base_branch: dev
-      head_brach: main
+      head_branch: main
 ```
