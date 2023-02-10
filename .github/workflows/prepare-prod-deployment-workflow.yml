@@ -35,7 +35,7 @@ jobs:
         run: |
           gh api --method POST \
             -H "Accept: application/vnd.github+json" \
-            /repos/$GITHUB_REPOSITORY/deployments/$(cat DEPLOY_ID)/statuses \
+            /repos/$GITHUB_REPOSITORY/deployments/$DEPLOY_ID/statuses \
             -F environment=${{inputs.stage}} \
             -F state='in_progress' \
             -F description='Deployment in progress.'
