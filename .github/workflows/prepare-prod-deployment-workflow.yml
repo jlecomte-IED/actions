@@ -28,15 +28,10 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: retrieve DEPLOY_ID
-        uses: actions/download-artifact@master
-        with:
-          name: DEPLOY_ID
-          path: .
-
       - name: "update deployment status [IN_PROGRESS]"
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          DEPLOY_ID: ${{ github.event.deployment.id }}
         run: |
           gh api --method POST \
             -H "Accept: application/vnd.github+json" \
