@@ -96,8 +96,9 @@ jobs:
               perl -i -0pe "s/$1/$2/s" $3
             }
 
-            gh release view $PREVIOUS_RELEASE > release.md
-            #Remove deploy button
+            gh release view $PREVIOUS_RELEASE --json body --jq '.body' > release.md
+
+            # Remove deploy button
             substitute '## Deploy to production :rocket:.*\n[^\n]+\n' "## :negative_squared_cross_mark: Never Deployed\n" release.md
 
             gh release edit $PREVIOUS_RELEASE --notes-file release.md
