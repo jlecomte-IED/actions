@@ -79,7 +79,7 @@ jobs:
     steps:
       - run: |
           echo "Exposing env vars"
-          latest_release=$(gh release list --exclude-drafts --exclude-pre-releases -L 1 -R '$GITHUB_REPOSITORY' | cut -f 3)
+          latest_release=$(gh release list --exclude-drafts --exclude-pre-releases -L 1 -R $GITHUB_REPOSITORY | cut -f 3)
           echo "LATEST_RELEASE=$latest_release" >> $GITHUB_ENV
 
   prepare-deployment:
