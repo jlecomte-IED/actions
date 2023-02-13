@@ -17,12 +17,6 @@ jobs:
         if: github.event.deployment.environment != 'production' ||  github.event.deployment_status.state != 'in_progress'
         run: exit 1
 
-      - name: retrieve release
-        run: | 
-          echo "Exposing env vars"
-          latest_release=$(gh release list --exclude-drafts --exclude-pre-releases -L 1 -R '$GITHUB_REPOSITORY' | cut -f 3)
-          echo "LATEST_RELEASE=$latest_release" >> $GITHUB_ENV
-
       - name: checkout sources
         uses: actions/checkout@v3
         with:
@@ -47,6 +41,7 @@ jobs:
           substitute() {
             perl -i -0pe "s/$1/$2/s" $3
           }
+          LATEST_RELEASE=$(gh release list --exclude-drafts --exclude-pre-releases -L 1 -R '$GITHUB_REPOSITORY' | cut -f 3)
           gh release view --json body --jq '.body' $LATEST_RELEASE > release.md
           #Remove deploy button
           substitute '### Deploy to production :rocket:.*\n[^\n]+\n' "### :truck: Deployment in Progress..." release.md
