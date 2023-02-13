@@ -15,17 +15,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: retrieve DEPLOY_ID
+        if: ${{ inputs.stage != 'prod' }}
         uses: actions/download-artifact@master
         with:
           name: DEPLOY_ID
           path: .
-
       - name: "update deployment status [SUCCESS]"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEPLOY_ID: ${{ github.event.deployment.id }}
         run: |
+          if [ ${{inputs.stage}} != 'prod' ]
+          then
+            deploy_id=$(cat DEPLOY_ID)
+          else
+            deploy_id=${DEPLOY_ID}
+          fi
           gh api --method POST \
-            repos/${GITHUB_REPOSITORY}/deployments/$(cat DEPLOY_ID)/statuses \
+            repos/${GITHUB_REPOSITORY}/deployments/${deploy_id}/statuses \
             -H "Accept: application/vnd.github+json" \
             -F environment=${{ inputs.stage }} \
             -F state='success' \
@@ -52,19 +59,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: retrieve DEPLOY_ID
-        if: failure()
+        if: ${{ inputs.stage != 'prod' }}
         uses: actions/download-artifact@master
         with:
           name: DEPLOY_ID
           path: .
-
       - name: "update deployment status [FAILURE]"
         if: failure()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEPLOY_ID: ${{ github.event.deployment.id }}
         run: |
+          if [ ${{inputs.stage}} != 'prod' ]
+          then
+            deploy_id=$(cat DEPLOY_ID)
+          else
+            deploy_id=${DEPLOY_ID}
+          fi
           gh api --method POST \
-            repos/${GITHUB_REPOSITORY}/deployments/$(cat DEPLOY_ID)/statuses \
+            repos/${GITHUB_REPOSITORY}/deployments/${deploy_id}/statuses \
             -H "Accept: application/vnd.github+json" \
             -F environment=${{ inputs.stage }} \
             -F state='failure' \
