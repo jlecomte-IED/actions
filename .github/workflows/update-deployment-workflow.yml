@@ -32,7 +32,7 @@ jobs:
             deploy_id=${DEPLOY_ID}
           fi
           gh api --method POST \
-            repos/${GITHUB_REPOSITORY}/deployments/$deploy_id/statuses \
+            repos/${GITHUB_REPOSITORY}/deployments/${deploy_id}/statuses \
             -H "Accept: application/vnd.github+json" \
             -F environment=${{ inputs.stage }} \
             -F state='success' \
@@ -77,7 +77,7 @@ jobs:
             deploy_id=${DEPLOY_ID}
           fi
           gh api --method POST \
-            repos/${GITHUB_REPOSITORY}/deployments/$deploy_id/statuses \
+            repos/${GITHUB_REPOSITORY}/deployments/${deploy_id}/statuses \
             -H "Accept: application/vnd.github+json" \
             -F environment=${{ inputs.stage }} \
             -F state='failure' \
