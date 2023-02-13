@@ -39,7 +39,7 @@ jobs:
           substitute() {
             perl -i -0pe "s/$1/$2/s" $3
           }
-          LATEST_RELEASE=$(gh release list --exclude-drafts --exclude-pre-releases -L 1 -R '$GITHUB_REPOSITORY' | cut -f 3)
+          LATEST_RELEASE=$(gh release list --exclude-drafts --exclude-pre-releases -L 1 -R $GITHUB_REPOSITORY | cut -f 3)
           gh release view $LATEST_RELEASE --json body --jq '.body' > release.md
           now=$(date '+%Y-%m-%d %H:%M:%S')
           #Remove deploy button
@@ -78,7 +78,7 @@ jobs:
           substitute() {
             perl -i -0pe "s/$1/$2/s" $3
           }
-          LATEST_RELEASE=$(gh release list --exclude-drafts --exclude-pre-releases -L 1 -R '$GITHUB_REPOSITORY' | cut -f 3)
+          LATEST_RELEASE=$(gh release list --exclude-drafts --exclude-pre-releases -L 1 -R $GITHUB_REPOSITORY | cut -f 3)
           gh release view $LATEST_RELEASE --json body --jq '.body' > release.md
           # Remove deploy button
           now=$(date '+%Y-%m-%d %H:%M:%S')
