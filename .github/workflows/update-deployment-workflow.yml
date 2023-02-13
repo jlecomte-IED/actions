@@ -25,7 +25,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEPLOY_ID: ${{ github.event.deployment.id }}
         run: |
-          deploy_id=$([${{inputs.stage}} != 'prod'] && cat DEPLOY_ID || ${DEPLOY_ID})
+          if [ ${{inputs.stage}} != 'prod' ]
+          then
+            deploy_id=$(cat DEPLOY_ID)
+          else
+            deploy_id=${DEPLOY_ID}
+          fi
           gh api --method POST \
             repos/${GITHUB_REPOSITORY}/deployments/$deploy_id/statuses \
             -H "Accept: application/vnd.github+json" \
@@ -65,7 +70,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEPLOY_ID: ${{ github.event.deployment.id }}
         run: |
-          deploy_id=$([${{inputs.stage}} != 'prod'] && cat DEPLOY_ID || ${DEPLOY_ID})
+          if [ ${{inputs.stage}} != 'prod' ]
+          then
+            deploy_id=$(cat DEPLOY_ID)
+          else
+            deploy_id=${DEPLOY_ID}
+          fi
           gh api --method POST \
             repos/${GITHUB_REPOSITORY}/deployments/$deploy_id/statuses \
             -H "Accept: application/vnd.github+json" \
