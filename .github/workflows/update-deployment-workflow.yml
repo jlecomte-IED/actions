@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: retrieve DEPLOY_ID
-        if: ${{ inputs.stage != 'prod' }}
+        if: ${{ inputs.stage != 'production' }}
         uses: actions/download-artifact@master
         with:
           name: DEPLOY_ID
@@ -39,7 +39,7 @@ jobs:
             -F description='Deployment success.'
 
       - name: update release note
-        if: ${{ inputs.stage == 'prod' }}
+        if: ${{ inputs.stage == 'production' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -59,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: retrieve DEPLOY_ID
-        if: ${{ inputs.stage != 'prod' }}
+        if: ${{ inputs.stage != 'production' }}
         uses: actions/download-artifact@master
         with:
           name: DEPLOY_ID
@@ -70,7 +70,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEPLOY_ID: ${{ github.event.deployment.id }}
         run: |
-          if [ ${{inputs.stage}} != 'prod' ]
+          if [ ${{inputs.stage}} != 'production' ]
           then
             deploy_id=$(cat DEPLOY_ID)
           else
@@ -84,7 +84,7 @@ jobs:
             -F description='Deployment failed.'
 
       - name: update release note
-        if: ${{ failure() && inputs.stage == 'prod' }}
+        if: ${{ failure() && inputs.stage == 'production' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
