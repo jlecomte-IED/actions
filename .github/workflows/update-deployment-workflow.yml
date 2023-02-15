@@ -14,12 +14,16 @@ jobs:
     if: success()
     runs-on: ubuntu-latest
     steps:
+      - name: checkout sources
+        uses: actions/checkout@master
+
       - name: retrieve DEPLOY_ID
         if: ${{ inputs.stage != 'production' }}
         uses: actions/download-artifact@master
         with:
           name: DEPLOY_ID
           path: .
+
       - name: "update deployment status [SUCCESS]"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -58,12 +62,16 @@ jobs:
     if: failure()
     runs-on: ubuntu-latest
     steps:
+      - name: checkout sources
+        uses: actions/checkout@master
+
       - name: retrieve DEPLOY_ID
         if: ${{ inputs.stage != 'production' }}
         uses: actions/download-artifact@master
         with:
           name: DEPLOY_ID
           path: .
+
       - name: "update deployment status [FAILURE]"
         if: failure()
         env:
