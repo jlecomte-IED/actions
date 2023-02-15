@@ -75,7 +75,7 @@ jobs:
     name: expose env vars
     runs-on: ubuntu-latest
     outputs:
-      stage: ${{ env.TF_VAR_stage }}
+      stage: ${{ github.event.deployment.environment }}
     steps:
       - run: |
           echo "Exposing env vars"
