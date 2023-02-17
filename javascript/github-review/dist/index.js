@@ -42118,7 +42118,7 @@ class OrgDataCollector {
 
 
     body = `### Repositories with member with direct access:`;
-    this.analyser.analysisResults.membersWithDirectAccess.forEach(repo => {
+    this.analyser.analysisResults.repositoriesWithDirectAccess.forEach(repo => {
       body = body + `\n#### ${repo.name}`;
       repo.members.forEach(member => body = body + `\n- ${member.login}`);
     });
