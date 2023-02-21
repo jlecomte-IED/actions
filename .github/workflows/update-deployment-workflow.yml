@@ -7,11 +7,14 @@ on:
       stage:
         required: true
         type: string
+      on_failure:
+        required: true
+        type: boolean
 
 jobs:
   update-deployment-on-success:
-    name: Update deployment
-    if: success()
+    name: Update deployment on success
+    if: ${{ inputs.on_failure == false }}
     runs-on: ubuntu-latest
     steps:
       - name: checkout sources
@@ -58,8 +61,8 @@ jobs:
           gh release edit $LATEST_RELEASE --notes-file release.md
 
   update-deployment-on-failure:
-    name: Update deployment
-    if: failure()
+    name: Update deployment on failure
+    if: ${{ inputs.on_failure == true }}
     runs-on: ubuntu-latest
     steps:
       - name: checkout sources
@@ -73,7 +76,7 @@ jobs:
           path: .
 
       - name: "update deployment status [FAILURE]"
-        if: failure()
+        if: ${{ inputs.on_failure == true }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEPLOY_ID: ${{ github.event.deployment.id }}
@@ -92,7 +95,7 @@ jobs:
             -F description='Deployment failed.'
 
       - name: update release note
-        if: ${{ failure() && inputs.stage == 'production' }}
+        if: ${{ inputs.on_failure == true && inputs.stage == 'production' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
