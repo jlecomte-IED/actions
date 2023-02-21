@@ -41,8 +41,10 @@ At the end of the job, add this step to mark the deployment as succeed or failed
 update-deployment:
   needs: [create-deployment, deploy, expose-env-vars]
   uses: fulll/actions/.github/workflows/update-deployment-workflow.yml@master
+  if: always()
   with:
     stage: ${{ needs.expose-env-vars.outputs.stage }}
+    on_failure: ${{ contains(needs.*.result, 'failure') }}
 ```
 
 :information_source: On `prod` context it will also add/remove the deploy button on the latest release of your project.
