@@ -26,6 +26,7 @@ jobs:
             -F ref=${GITHUB_REF} \
             -F environment=production \
             -F production_environment=false \
+            -F auto_merge=false \
             -f required_contexts[] | jq -r '.id' > DEPLOY_ID
 
           id=$(cat DEPLOY_ID)
