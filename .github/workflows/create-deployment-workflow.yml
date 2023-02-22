@@ -23,6 +23,7 @@ jobs:
             -F ref=${GITHUB_REF} \
             -F environment=${{ inputs.stage }} \
             -F production_environment=false \
+            -F auto_merge=false \
             -f required_contexts[] | jq -r '.id' > DEPLOY_ID
 
           gh api \
