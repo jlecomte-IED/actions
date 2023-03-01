@@ -42214,11 +42214,17 @@ class GithubTools {
     this.result = null;
     this.initiateOctokit(token);
     this.initiateGraphQLClient(token);
+    this.initiateOctokitPagination(token);
   }
 
   initiateOctokit(token) {
     this.octokit = github.getOctokit(token).rest;
   }
+
+  initiateOctokitPagination(token) {
+    this.octokit_pagination = github.getOctokit(token);
+  }
+  
 
   initiateGraphQLClient(token) {
     this.graphqlClient = graphql.defaults({
@@ -42509,7 +42515,7 @@ class GithubTools {
   }
 
   async listCards(column_id) {
-    const result = await this.octokit.paginate('GET /projects/columns/{column_id}/cards',
+    const result = await this.octokit_pagination.paginate('GET /projects/columns/{column_id}/cards',
       {
         column_id
       });
@@ -42551,7 +42557,7 @@ class GithubTools {
   }
 
   async listRepoIssues(state) {
-    const result = await this.octokit.paginate('GET /repos/{owner}/{repo}/issues',
+    const result = await this.octokit_pagination.paginate('GET /repos/{owner}/{repo}/issues',
       {
         owner: this.organization,
         repo: this.repo,
