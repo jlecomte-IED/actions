@@ -17,20 +17,15 @@ In order to follow deploy status, you must implement these steps in your Github 
 
 Add these steps on your first job in order to create a deployment in progress:
 
-```yaml
-expose-env-vars:
-  name: expose env vars
-  runs-on: ubuntu-latest
-  outputs:
-    stage: ${{ env.TF_VAR_stage }}
-  steps:
-    - run: echo "Exposing env vars"
+:warning: `stage` value can be `dev`, `preprod` or `production`
 
+```yaml
 create-deployment:
   needs: [expose-env-vars]
   uses: fulll/actions/.github/workflows/create-deployment-workflow.yml@master
+  # stage value can be dev, preprod or production
   with:
-    stage: ${{ needs.expose-env-vars.outputs.stage }}
+    stage: dev 
 ```
 
 ### Update deployment status
@@ -42,8 +37,9 @@ update-deployment:
   needs: [create-deployment, deploy, expose-env-vars]
   uses: fulll/actions/.github/workflows/update-deployment-workflow.yml@master
   if: always()
+  # stage value can be dev, preprod or production
   with:
-    stage: ${{ needs.expose-env-vars.outputs.stage }}
+    stage: dev 
     on_failure: ${{ contains(needs.*.result, 'failure') }}
 ```
 
@@ -55,7 +51,7 @@ Add these step in `release` workflow to create a deployment in progress for prod
 
 ```yaml
   create-deployment-release:
-    needs: [ expose-env-vars, plan-infrastructure ]
+    needs: [ plan-infrastructure ]
     uses: fulll/actions/.github/workflows/create-deployment-release-workflow.yml@master
     secrets:
       PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
