@@ -69,17 +69,6 @@ env:
   TF_VAR_stage: prod
 
 jobs:
-  expose-env-vars:
-    name: expose env vars
-    runs-on: ubuntu-latest
-    outputs:
-      stage: ${{ github.event.deployment.environment }}
-    steps:
-      - run: |
-          echo "Exposing env vars"
-          latest_release=$(gh release list --exclude-drafts --exclude-pre-releases -L 1 -R $GITHUB_REPOSITORY | cut -f 3)
-          echo "LATEST_RELEASE=$latest_release" >> $GITHUB_ENV
-
   prepare-deployment:
     needs: [expose-env-vars]
     uses: fulll/actions/.github/workflows/prepare-prod-deployment-workflow.yml@master
