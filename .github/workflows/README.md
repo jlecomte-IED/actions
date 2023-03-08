@@ -21,7 +21,6 @@ Add these steps on your first job in order to create a deployment in progress:
 
 ```yaml
 create-deployment:
-  needs: [expose-env-vars]
   uses: fulll/actions/.github/workflows/create-deployment-workflow.yml@master
   # stage value can be dev, preprod or production
   with:
@@ -34,7 +33,7 @@ At the end of the job, add this step to mark the deployment as succeed or failed
 
 ```yaml
 update-deployment:
-  needs: [create-deployment, deploy, expose-env-vars]
+  needs: [create-deployment, deploy]
   uses: fulll/actions/.github/workflows/update-deployment-workflow.yml@master
   if: always()
   # stage value can be dev, preprod or production
@@ -70,10 +69,9 @@ env:
 
 jobs:
   prepare-deployment:
-    needs: [expose-env-vars]
     uses: fulll/actions/.github/workflows/prepare-prod-deployment-workflow.yml@master
     with:
-      stage: ${{ needs.expose-env-vars.outputs.stage }}
+      stage: production
 ```
 
 ## Automatic "master → dev" pull request
