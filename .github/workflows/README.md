@@ -119,7 +119,7 @@ This workflow add options to select which branches you want to merge.
 The workflow will be triggered on each `head_branch` update and will merge this branch into `base_branch`
 
 ```yml
-name: automatic main → dev PR
+name: automatic master → dev PR
 
 on:
   push:
