@@ -126,7 +126,7 @@ name: automatic main → dev PR
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   automatic-pr:
@@ -135,5 +135,5 @@ jobs:
       botToken: ${{ secrets.BOT_TOKEN }}
     inputs:
       base_branch: dev
-      head_branch: main
+      head_branch: master
 ```
