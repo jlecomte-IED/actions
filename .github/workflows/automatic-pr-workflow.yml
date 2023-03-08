@@ -27,7 +27,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.botToken }}
         run: |
-          gh pr create --base ${{ inputs.base_branch }} --head ${{ inputs.head_branch }} --title "{{ inputs.head_branch }} → ${{ inputs.base_branch }}" --body "" --label automerge --repo $GITHUB_REPOSITORY > pull_request.md
+          gh pr create --base ${{ inputs.base_branch }} --head ${{ inputs.head_branch }} --title "${{ inputs.head_branch }} → ${{ inputs.base_branch }}" --body "" --label automerge --repo $GITHUB_REPOSITORY > pull_request.md
           PR_NUMBER=$( basename $(cat pull_request.md) )
           echo "pr_number=${PR_NUMBER}" >> $GITHUB_OUTPUT
 
