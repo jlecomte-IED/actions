@@ -86,6 +86,10 @@ Add this Github action in your repository to add a new automatic workflow that w
 
 Path: `.github/workflows/automatic-master-dev-pr.yml`
 
+### Workflows inputs:
+
+`auto_merge` _(optional)_: Set value to `false` to disable auto-approve and auto-merge steps. Defaults is `true`
+
 ```yaml
 name: automatic master → dev PR
 
@@ -99,7 +103,11 @@ jobs:
     uses: fulll/actions/.github/workflows/automatic-master-dev-pr.yml@master
     secrets:
       botToken: ${{ secrets.BOT_TOKEN }}
+    with:
+      auto_merge: true
 ```
+
+
 
 ## Automatic pull request
 
@@ -113,8 +121,11 @@ Add this Github action in your repository to add a new automatic workflow that w
 
 This workflow add options to select which branches you want to merge.
 
+### Workflows inputs:
+
 `head_branch` : The updated branch
 `base_branch` : The branch to merge
+`auto_merge` _(optional)_: Set value to `false` to disable auto-approve and auto-merge steps. Defaults is `true`
 
 The workflow will be triggered on each `head_branch` update and will merge this branch into `base_branch`
 
@@ -134,4 +145,5 @@ jobs:
     inputs:
       base_branch: dev
       head_branch: master
+      auto_merge: true
 ```
