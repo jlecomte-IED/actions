@@ -10,6 +10,9 @@ on:
       head_branch: 
         type: string
         required: true
+      auto_merge:
+        type: boolean
+        required: true
     secrets:
       botToken:
         required: true
@@ -28,17 +31,29 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.botToken }}
         run: |
           gh pr create --base ${{ inputs.base_branch }} --head ${{ inputs.head_branch }} --title "${{ inputs.head_branch }} → ${{ inputs.base_branch }}" --body "" --label automerge --repo $GITHUB_REPOSITORY > pull_request.md
-          PR_NUMBER=$( basename $(cat pull_request.md) )
+          
+          # Check if PR already exists in error output from gh command
+          if [[ -f "pull_request_errors.log" && ! -z "$(cat pull_request_errors.log | grep exists)" ]];
+          then
+            echo "Pull request ${{ inputs.head_branch }} → ${{ inputs.base_branch }} already exists"
+            PR_NUMBER="CONFLICT"
+          else
+            echo "Pull request ${{ inputs.head_branch }} → ${{ inputs.base_branch }} created"
+            PR_NUMBER=$( basename $(cat pull_request.md) )
+          fi
+          
           echo "pr_number=${PR_NUMBER}" >> $GITHUB_OUTPUT
 
       - name: enable auto-merge
         id: enable-auto-merge
+        if: ${{ steps.create-pr.outputs.pr_number != 'CONFLICT' && inputs.auto_merge == true}}
         env:
           GITHUB_TOKEN: ${{ secrets.botToken }}
         run: gh pr merge ${{ steps.create-pr.outputs.pr_number }} --auto --merge --repo $GITHUB_REPOSITORY
 
       - name: review pr
         id: review-pr
+        if: ${{ steps.create-pr.outputs.pr_number != 'CONFLICT' && inputs.auto_merge == true}}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh pr review ${{ steps.create-pr.outputs.pr_number }} --approve --repo $GITHUB_REPOSITORY
