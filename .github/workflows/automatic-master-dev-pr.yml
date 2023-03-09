@@ -25,8 +25,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.botToken }}
         run: |
-          gh pr create --base dev --head master --title "master → dev" --body "" --label automerge --repo $GITHUB_REPOSITORY > pull_request.md 2> pull_request_errors.log
-          
+          # Check if the "automerge" label exists
+          if [ "$(gh label list --search back --json name | wc -l)" -eq "1" ]; then 
+            export LABEL="--label automerge"
+          else 
+            export LABEL=""
+          fi
+
+          gh pr create --base dev --head master --title "master → dev" --body "" $LABEL --repo $GITHUB_REPOSITORY > pull_request.md 2> pull_request_errors.log
+
           # Check if PR already exists in error output from gh command
           if [[ -f "pull_request_errors.log" && ! -z "$(cat pull_request_errors.log | grep exists)" ]];
           then
