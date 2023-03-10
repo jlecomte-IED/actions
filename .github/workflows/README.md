@@ -142,7 +142,7 @@ jobs:
     uses: fulll/actions/.github/workflows/automatic-pr-workflow.yml@master
     secrets:
       botToken: ${{ secrets.BOT_TOKEN }}
-    inputs:
+    with:
       base_branch: dev
       head_branch: master
       auto_merge: true
